@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <random>
 #include <stdexcept>
+#include <iostream>
 
 using Matrix = Eigen::MatrixXd;
 using Vector = Eigen::VectorXd;
@@ -14,12 +15,18 @@ enum class InitScheme {
 };
 class RandomGenerator {
 public:
-    explicit RandomGenerator(uint32_t seed = 738547485u) : gen_(seed) {
+    explicit RandomGenerator(uint32_t seed = 738547485u) : gen_(seed), seed_(seed) {
     }
 
     void reseed(uint32_t seed) {
         gen_.seed(seed);
+        seed_ = seed;
     }
+
+    void show_seed() const {
+        std::cout << "RandomGenerator seed: " << seed_ << std::endl;
+    }
+
 
     Matrix init_linear_weights(size_t out_dim, size_t in_dim,
                                InitScheme scheme = InitScheme::XavierNormal, double gain = 1.0) {
@@ -49,6 +56,7 @@ public:
 
 private:
     std::mt19937 gen_;
+    uint32_t seed_;
     Matrix normal_matrix(size_t rows, size_t cols, double mean = 0.0, double stddev = 1.0) {
         std::normal_distribution<double> dist(mean, stddev);
         return Matrix::NullaryExpr(rows, cols, [&]() {
