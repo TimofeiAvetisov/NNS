@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <Utils.hpp>
+#include <memory>
 
 using Matrix = Eigen::MatrixXd;
 using Vector = Eigen::VectorXd;
@@ -8,43 +10,44 @@ using Vector = Eigen::VectorXd;
 class LinearLayer {
 public:
     LinearLayer(const Matrix& A_init, const Vector& b_init);
-    LinearLayer(size_t in_dim, size_t out_dim, double std_dev = 0.01);
+    LinearLayer(size_t in_dim, size_t out_dim, InitScheme init_scheme = InitScheme::XavierNormal,
+                double gain = 1.0, std::shared_ptr<RandomGenerator> rng = nullptr);
 
     /**
-    * @brief Forward pass through the linear layer
-    * @param X Input matrix of shape (in_dim, batch_size)
-    * @return Output matrix of shape (out_dim, batch_size)
-    */
+     * @brief Forward pass through the linear layer
+     * @param X Input matrix of shape (in_dim, batch_size)
+     * @return Output matrix of shape (out_dim, batch_size)
+     */
     Matrix forward(const Matrix& X);
 
     /**
-    * @brief Backward pass through the linear layer
-    * @param dY Gradient of the output matrix of shape (out_dim, batch_size)
-    * @return Gradient of the input matrix of shape (in_dim, batch_size)
-    */
+     * @brief Backward pass through the linear layer
+     * @param dY Gradient of the output matrix of shape (out_dim, batch_size)
+     * @return Gradient of the input matrix of shape (in_dim, batch_size)
+     */
     Matrix backward(const Matrix& dY);
 
     /**
-    * @brief Zero the gradients
-    */
+     * @brief Zero the gradients
+     */
     void zero_grad();
 
     /**
-    * @brief Update the weights and biases
-    * @param lr Learning rate
-    */
+     * @brief Update the weights and biases
+     * @param lr Learning rate
+     */
     void step(double lr);
 
     /**
-    * @brief Get the input dimension
-    * @return Input dimension
-    */
+     * @brief Get the input dimension
+     * @return Input dimension
+     */
     int in_dim() const;
 
     /**
-    * @brief Get the output dimension
-    * @return Output dimension
-    */
+     * @brief Get the output dimension
+     * @return Output dimension
+     */
     int out_dim() const;
 
 private:

@@ -1,16 +1,26 @@
 #include <Layers.hpp>
 #include <stdexcept>
 
-
-LinearLayer::LinearLayer(size_t in_dim, size_t out_dim, double std_dev) {
-    A_ = Matrix::Random(static_cast<int>(out_dim), static_cast<int>(in_dim)) * std_dev;
-    b_ = Vector::Random(static_cast<int>(out_dim)) * std_dev;
+// may be different initialization methods based on activation functions not just by hands
+LinearLayer::LinearLayer(size_t in_dim, size_t out_dim,
+                         InitScheme init_scheme = InitScheme::XavierNormal, double gain = 1.0,
+                         std::shared_ptr<RandomGenerator> rng = nullptr) {
+    if (!rng) {
+        throw std::invalid_argument("LinearLayer constructor: rng pointer is null");
+    }
+    A_ = rng->init_linear_weights(out_dim, in_dim, init_scheme, gain);
+    b_ = Vector::Zero(static_cast<int>(out_dim));
 
     dA_.setZero(A_.rows(), A_.cols());
     db_.setZero(b_.size());
 }
 
-LinearLayer::LinearLayer(const Matrix& A_init, const Vector& b_init) : A_(A_init), b_(b_init) {
+LinearLayer::LinearLayer(const Matrix& A_init, const Vector& b_init) {  // idk if needed
+    if (A_init.rows() != b_init.size()) {
+        throw std::invalid_argument("Dimension mismatch between A_init and b_init");
+    }
+    A_ = A_init;
+    b_ = b_init;
     dA_.setZero(A_.rows(), A_.cols());
     db_.setZero(b_.size());
 }
@@ -27,7 +37,6 @@ Matrix LinearLayer::backward(const Matrix& dY) {
     db_ = dY.rowwise().sum();
     return A_.transpose() * dY;
 }
-
 
 void LinearLayer::zero_grad() {
     dA_.setZero(A_.rows(), A_.cols());
@@ -46,8 +55,8 @@ int LinearLayer::out_dim() const {
     return static_cast<int>(A_.rows());
 }
 
-
-ActivationLayer::ActivationLayer(ActType type) : type_(type) {}
+ActivationLayer::ActivationLayer(ActType type) : type_(type) {
+}
 
 Matrix ActivationLayer::forward(const Matrix& X) {
     last_X_ = X;
@@ -75,7 +84,8 @@ Matrix ActivationLayer::backward(const Matrix& dY) {
             return dY.cwiseProduct(mask);
         }
         case ActType::Sigmoid: {
-            return (dY.array() * (last_Y_.array() * (1.0 - last_Y_.array()))).matrix(); // бля че за хуетень
+            return (dY.array() * (last_Y_.array() * (1.0 - last_Y_.array())))
+                .matrix();  // бля че за хуетень
         }
         case ActType::Tanh: {
             return (dY.array() * (1.0 - last_Y_.array().square())).matrix();
@@ -106,7 +116,7 @@ Matrix Loss::backward(const Matrix& y_hat, const Matrix& y) const {
             const double n = static_cast<double>(y_hat.size());
             return (2.0 / n) * (y_hat - y);
         }
-        default: 
+        default:
             throw std::invalid_argument("Invalid loss type");
     }
 }
