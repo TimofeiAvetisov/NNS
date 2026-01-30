@@ -3,8 +3,8 @@
 
 // may be different initialization methods based on activation functions not just by hands
 LinearLayer::LinearLayer(size_t in_dim, size_t out_dim,
-                         InitScheme init_scheme = InitScheme::XavierNormal, double gain = 1.0,
-                         std::shared_ptr<RandomGenerator> rng = nullptr) {
+                         InitScheme init_scheme, double gain,
+                         std::shared_ptr<RandomGenerator> rng) {
     if (!rng) {
         throw std::invalid_argument("LinearLayer constructor: rng pointer is null");
     }
@@ -26,6 +26,9 @@ LinearLayer::LinearLayer(const Matrix& A_init, const Vector& b_init) {  // idk i
 }
 
 Matrix LinearLayer::forward(const Matrix& X) {
+    if (X.rows() != A_.cols()) {
+        throw std::invalid_argument("LinearLayer::forward: dimension mismatch between A_ and X");
+    }
     last_X_ = X;
     Matrix Y = A_ * X;
     Y.colwise() += b_;
@@ -33,6 +36,12 @@ Matrix LinearLayer::forward(const Matrix& X) {
 }
 
 Matrix LinearLayer::backward(const Matrix& dY) {
+    if (dY.rows() != A_.cols()) {
+        throw std::invalid_argument("LinearLayer::backward: dimension mismatch between A_ and dY");
+    }
+    if (dY.cols() != last_X_.rows()) {
+        throw std::invalid_argument("LinearLayer::backward: dimension mismatch between last_X_ and dY");
+    }
     dA_ = dY * last_X_.transpose();
     db_ = dY.rowwise().sum();
     return A_.transpose() * dY;
@@ -55,46 +64,36 @@ int LinearLayer::out_dim() const {
     return static_cast<int>(A_.rows());
 }
 
-ActivationLayer::ActivationLayer(ActType type) : type_(type) {
+ActivationLayer::ActivationLayer(AnyScalarActivation activation) : activation_(std::move(activation)) {
+    if (!activation_.isDefined()) {
+        throw std::invalid_argument("ActivationLayer constructor: activation is not defined");
+    }
 }
 
 Matrix ActivationLayer::forward(const Matrix& X) {
     last_X_ = X;
-
-    switch (type_) {
-        case ActType::ReLU:
-            last_Y_ = X.cwiseMax(0.0);
-            break;
-        case ActType::Sigmoid:
-            last_Y_ = (1.0 / (1.0 + (-X.array()).exp())).matrix();
-            break;
-        case ActType::Tanh:
-            last_Y_ = X.array().tanh().matrix();
-            break;
-        default:
-            throw std::invalid_argument("Invalid activation type");
-    }
-    return last_Y_;
+    Matrix Y = X.unaryExpr([this](double x)  {return activation_->forward(x);});
+    last_Y_ = Y;
+    return Y;
 }
 
 Matrix ActivationLayer::backward(const Matrix& dY) {
-    switch (type_) {
-        case ActType::ReLU: {
-            Matrix mask = (last_X_.array() > 0.0).cast<double>().matrix();
-            return dY.cwiseProduct(mask);
-        }
-        case ActType::Sigmoid: {
-            return (dY.array() * (last_Y_.array() * (1.0 - last_Y_.array())))
-                .matrix();  // бля че за хуетень
-        }
-        case ActType::Tanh: {
-            return (dY.array() * (1.0 - last_Y_.array().square())).matrix();
-        }
-        default:
-            throw std::invalid_argument("Invalid activation type");
+    if ((dY.rows() != last_Y_.rows()) || (dY.cols() != last_Y_.cols())) {
+        throw std::invalid_argument("ActivationLayer::backward: dimension mismatch between dY and last_Y_");
     }
+
+    Matrix dX = dY;
+    for (int i = 0; i < dY.rows(); ++i) {
+        for (int j = 0; j < dY.cols(); ++j) {
+            double x = last_X_(i, j);
+            double y = last_Y_(i, j);
+            dX(i, j) *= activation_->derivative(x, y);
+        }
+    }
+    return dX;
 }
 
+// Should make as ActibationLayer above thru type erasure
 Loss::Loss(LossType type) : type_(type) {
 }
 

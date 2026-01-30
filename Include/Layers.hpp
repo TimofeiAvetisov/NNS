@@ -1,8 +1,9 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <Utils.hpp>
+#include <Random.hpp>
 #include <memory>
+#include <Activation.hpp>
 
 using Matrix = Eigen::MatrixXd;
 using Vector = Eigen::VectorXd;
@@ -11,7 +12,7 @@ class LinearLayer {
 public:
     LinearLayer(const Matrix& A_init, const Vector& b_init);
     LinearLayer(size_t in_dim, size_t out_dim, InitScheme init_scheme = InitScheme::XavierNormal,
-                double gain = 1.0, std::shared_ptr<RandomGenerator> rng = nullptr);
+                double gain = 1.0, std::shared_ptr<RandomGenerator> rng = nullptr);  // rng will be provided thru NeuralNetwork
 
     /**
      * @brief Forward pass through the linear layer
@@ -51,28 +52,32 @@ public:
     int out_dim() const;
 
 private:
+    // weights and biases
     Matrix A_;
     Vector b_;
 
-    Matrix last_X_;
+    Matrix last_X_;  // last input
 
-    Matrix dA_;
-    Vector db_;
+    Matrix dA_;  // gradient of weights
+    Vector db_;  // gradient of biases
 };
 
-enum class ActType { ReLU, Sigmoid, Tanh };
 
 class ActivationLayer {
 public:
-    explicit ActivationLayer(ActType type);
+    explicit ActivationLayer(AnyScalarActivation activation);
+    ActivationLayer(const ActivationLayer&) = delete;
+    ActivationLayer& operator=(const ActivationLayer&) = delete;
+    ActivationLayer(ActivationLayer&&) = default;
+    ActivationLayer& operator=(ActivationLayer&&) = default;
 
     Matrix forward(const Matrix& X);
     Matrix backward(const Matrix& dY);
 
 private:
-    ActType type_;
-    Matrix last_X_;
-    Matrix last_Y_;
+    AnyScalarActivation activation_;
+    Matrix last_X_;  // last input
+    Matrix last_Y_;  // last output
 };
 
 enum class LossType { MSE };
