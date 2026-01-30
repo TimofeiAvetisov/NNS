@@ -8,29 +8,47 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-file(GLOB_RECURSE SOURCES
-    CONFIGURE_DEPENDS
-    "${CMAKE_SOURCE_DIR}/Source/*.cpp"
-    "${CMAKE_SOURCE_DIR}/Source/*.c"
-    "${CMAKE_SOURCE_DIR}/Source/*.cc"
-    "${CMAKE_SOURCE_DIR}/Source/*.cxx"
+add_executable(${PROJECT_NAME}
+    main.cpp
 )
 
-add_executable(${PROJECT_NAME} ${SOURCES})
-
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/Include
-    ${CMAKE_SOURCE_DIR}/Utils
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/utils
 )
 
 include(FetchContent)
+
+
+set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "" FORCE)
+
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(EIGEN_BUILD_BTL OFF CACHE BOOL "" FORCE)
+set(EIGEN_BUILD_DOC OFF CACHE BOOL "" FORCE)
+set(EIGEN_BUILD_DEMOS OFF CACHE BOOL "" FORCE)
+
+file(GLOB_RECURSE ALL_SOURCES
+    *.cpp
+    *.hpp
+    *.h
+)
+
+add_custom_target(
+    clang-format
+    COMMAND clang-format -i ${ALL_SOURCES}
+)
 
 FetchContent_Declare(
     eigen
     GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
     GIT_TAG 3.4.0
+    GIT_SHALLOW TRUE
 )
 
 FetchContent_MakeAvailable(eigen)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Eigen3::Eigen)
+
+
+

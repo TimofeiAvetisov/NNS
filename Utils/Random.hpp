@@ -27,7 +27,6 @@ public:
         std::cout << "RandomGenerator seed: " << seed_ << std::endl;
     }
 
-
     Matrix init_linear_weights(size_t out_dim, size_t in_dim,
                                InitScheme scheme = InitScheme::XavierNormal, double gain = 1.0) {
         if (!(gain > 0.0)) {

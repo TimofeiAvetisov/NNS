@@ -5,7 +5,7 @@
 
 // References: DimaTrushin: https://github.com/DimaTrushin/Library/tree/master/AnyObject
 //---------------------------------------------------------------------------
-// How To Use 
+// How To Use
 //---------------------------------------------------------------------------
 //
 // Description
@@ -131,8 +131,8 @@
 // 3) More readable semantics
 //    - `using CAny = CAnyMovable<IAny, CAnyImpl>;` is explicit and clear.
 //    - No template gymnastics or nested template interfaces.
-// 
-// 
+//
+//
 // 4) Fully compatible with the same usage style
 //    - All old usage patterns (`CAny x = ...;`, `x->print();`, `x.emplace<T>()`) work identically.
 //    - Move-only semantics are preserved.
@@ -142,14 +142,14 @@
 //
 //---------------------------------------------------------------------------
 
-template<class Interface, template<class, class> class Implementation>
+template <class Interface, template <class, class> class Implementation>
 class CAnyMovable {
     struct IHolder : Interface {
         virtual std::unique_ptr<IHolder> move_clone() noexcept = 0;
         ~IHolder() override = default;
     };
 
-    template<class T>
+    template <class T>
     struct Holder final : Implementation<IHolder, T> {
         using Base = Implementation<IHolder, T>;
         using Base::Base;
@@ -168,18 +168,27 @@ public:
     CAnyMovable(CAnyMovable&&) noexcept = default;
     CAnyMovable& operator=(CAnyMovable&&) noexcept = default;
 
-    template<class T>
+    template <class T>
     CAnyMovable(T&& v)
-        : ptr_(std::make_unique<Holder<std::remove_cvref_t<T>>>(std::forward<T>(v))) {}
+        : ptr_(std::make_unique<Holder<std::remove_cvref_t<T>>>(std::forward<T>(v))) {
+    }
 
-    template<class T, class... Args>
+    template <class T, class... Args>
     void emplace(Args&&... args) {
         ptr_ = std::make_unique<Holder<T>>(T(std::forward<Args>(args)...));
     }
 
-    bool isDefined() const noexcept { return static_cast<bool>(ptr_); }
-    void clear() noexcept { ptr_.reset(); }
+    bool isDefined() const noexcept {
+        return static_cast<bool>(ptr_);
+    }
+    void clear() noexcept {
+        ptr_.reset();
+    }
 
-    Interface* operator->() noexcept { return ptr_.get(); }
-    const Interface* operator->() const noexcept { return ptr_.get(); }
+    Interface* operator->() noexcept {
+        return ptr_.get();
+    }
+    const Interface* operator->() const noexcept {
+        return ptr_.get();
+    }
 };
