@@ -36,10 +36,10 @@ Matrix LinearLayer::forward(const Matrix& X) {
 }
 
 Matrix LinearLayer::backward(const Matrix& dY) {
-    if (dY.rows() != A_.cols()) {
+    if (dY.rows() != A_.rows()) {
         throw std::invalid_argument("LinearLayer::backward: dimension mismatch between A_ and dY");
     }
-    if (dY.cols() != last_X_.rows()) {
+    if (dY.cols() != last_X_.cols()) {
         throw std::invalid_argument("LinearLayer::backward: dimension mismatch between last_X_ and dY");
     }
     dA_ = dY * last_X_.transpose();

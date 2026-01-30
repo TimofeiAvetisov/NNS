@@ -34,8 +34,8 @@ public:
         return object_.forward(x);
     }
 
-    double derivative(double x) const override {
-        return object_.derivative(x);
+    double derivative(double x, double y) const override {
+        return object_.derivative(x, y);
     }
 private:
     TObject object_;
