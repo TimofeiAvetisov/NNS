@@ -14,15 +14,15 @@
 struct ILayer {
     virtual Matrix forward(const Matrix& X, Tape& tape,
                            LinearGrads* grads) = 0;  // ActivationLayer ignores grads
-    virtual Matrix predict(const Matrix& X);
+    virtual Matrix predict(const Matrix& X) = 0;
     virtual void sgd_step(double lr, LinearGrads* grads) = 0;  // ActivationLayer do nothing
     virtual ~ILayer() = default;
 };
 
 template <class T>
 concept LayerLike =
-    requires(T& t, const Matrix& X, Tape& tape, LinearGrads* g, const double lr, const bool ist) {
-        { t.forward(X, tape, g, ist) } -> std::same_as<Matrix>;
+    requires(T& t, const Matrix& X, Tape& tape, LinearGrads* g, const double lr) {
+        { t.forward(X, tape, g) } -> std::same_as<Matrix>;
         { t.sgd_step(lr, g) } -> std::same_as<void>;
         { t.predict(X) } -> std::same_as<Matrix>;
     };
@@ -59,10 +59,10 @@ private:
 
 using AnyLayer = CAnyMovable<ILayer, CLayerImpl>;
 
-inline AnyLayer MakeLinearLayer(size_t in_dim, size_t out_dim,
+inline AnyLayer MakeLinearLayer(size_t in_dim, size_t out_dim, std::shared_ptr<RandomGenerator> rng,
                                 InitScheme init_scheme = InitScheme::XavierNormal,
-                                double gain = 1.0, std::shared_ptr<RandomGenerator> rng) {
-    return AnyLayer(LinearLayer(in_dim, out_dim, init_scheme, gain, rng));
+                                double gain = 1.0) {
+    return AnyLayer(LinearLayer(in_dim, out_dim, rng, init_scheme, gain));
 }
 
 inline AnyLayer MakeLinearLayer(const Matrix& A_init, const Vector& b_init) {

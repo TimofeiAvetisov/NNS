@@ -3,6 +3,7 @@
 #include <nns/activation/ScalarActivation.hpp>
 #include <nns/core/Types.hpp>
 #include <stdexcept>
+#include <utility>
 
 struct ActivationNode : public TapeNode {
     Matrix X_;  // cashed input

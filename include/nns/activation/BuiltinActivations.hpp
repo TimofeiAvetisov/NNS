@@ -17,7 +17,7 @@ struct Sigmoid {
         return 1.0 / (1.0 + std::exp(-x));
     }
 
-    double derivative(double x, double y) const {
+    double derivative(double /*x*/, double y) const {
         return y * (1.0 - y);
     }
 };

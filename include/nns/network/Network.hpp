@@ -4,10 +4,14 @@
 #include <nns/core/Tape.hpp>
 #include <nns/grads/LinearGrads.hpp>
 #include <nns/activation/BuiltinActivations.hpp>
+#include <nns/layers/LossLayers.hpp>
 #include <Random.hpp>
 #include <vector>
 #include <memory>
-#include <nns/layers/LossLayers.hpp>
+#include <initializer_list>
+#include <utility>
+#include <stdexcept>
+
 
 class NeuralNetwork {
 public:
@@ -25,7 +29,7 @@ public:
             ActivationFactory act_factory = config.second;
 
             layers_.push_back(std::make_unique<AnyLayer>(
-                MakeLinearLayer(in_dim, out_dim, InitScheme::XavierNormal, 1.0, rng_)));
+                MakeLinearLayer(in_dim, out_dim, rng_, InitScheme::XavierNormal, 1.0)));
             layers_.push_back(std::make_unique<AnyLayer>(ActivationLayer(act_factory())));
             grads_.emplace_back(out_dim, in_dim);
             grads_.emplace_back(0, 0);  // ActivationLayer has no grads

@@ -1,12 +1,12 @@
 #pragma once
+#include <nns/core/Types.hpp>
 #include <Eigen/Dense>
 #include <cstdint>
 #include <random>
 #include <stdexcept>
 #include <iostream>
+#include <cmath>
 
-using Matrix = Eigen::MatrixXd;
-using Vector = Eigen::VectorXd;
 
 enum class InitScheme {
     Normal,        // N(0, std)
@@ -58,7 +58,7 @@ private:
     uint32_t seed_;
     Matrix normal_matrix(size_t rows, size_t cols, double mean = 0.0, double stddev = 1.0) {
         std::normal_distribution<double> dist(mean, stddev);
-        return Matrix::NullaryExpr(rows, cols, [&]() {
+        return Matrix::NullaryExpr(static_cast<Eigen::Index>(rows), static_cast<Eigen::Index>(cols), [&]() {
             return dist(gen_);
         });  // Basicly just functor with normal distribution
     }

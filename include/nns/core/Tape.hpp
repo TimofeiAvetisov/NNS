@@ -2,6 +2,7 @@
 #include <nns/core/Types.hpp>
 #include <vector>
 #include <memory>
+#include <utility>
 
 struct TapeNode {
     virtual ~TapeNode() = default;

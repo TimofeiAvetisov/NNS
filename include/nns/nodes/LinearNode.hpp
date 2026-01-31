@@ -1,6 +1,7 @@
 #pragma once
 #include <nns/core/Tape.hpp>
 #include <nns/core/Types.hpp>
+#include <utility>
 
 struct LinearNode : public TapeNode {
     Matrix X_;         // cashed input

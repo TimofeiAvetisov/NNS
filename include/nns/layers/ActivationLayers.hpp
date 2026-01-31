@@ -6,6 +6,7 @@
 #include <nns/grads/LinearGrads.hpp>
 #include <stdexcept>
 #include <memory>
+#include <utility>
 
 class ActivationLayer {
 public:

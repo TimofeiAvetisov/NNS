@@ -7,8 +7,8 @@ struct LinearGrads {
     Vector db;
 
     LinearGrads(size_t out_dim, size_t in_dim)
-        : dA(Matrix::Zero(static_cast<int>(out_dim), static_cast<int>(in_dim))),
-          db(Vector::Zero(static_cast<int>(out_dim))) {
+        : dA(Matrix::Zero(static_cast<Eigen::Index>(out_dim), static_cast<Eigen::Index>(in_dim))),
+          db(Vector::Zero(static_cast<Eigen::Index>(out_dim))) {
     }
 
     void set_zero() {
