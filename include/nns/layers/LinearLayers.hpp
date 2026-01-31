@@ -28,8 +28,14 @@ public:
         }
         Matrix Y = A_ * X;
         Y.colwise() += b_;
-
         tape.push(std::make_unique<LinearNode>(X, A_, grads->dA, grads->db));
+
+        return Y;
+    }
+
+    Matrix predict(const Matrix& X) {
+        Matrix Y = A_ * X;
+        Y.colwise() += b_;
         return Y;
     }
 

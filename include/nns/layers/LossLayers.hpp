@@ -5,9 +5,9 @@
 
 enum class LossType { MSE };
 
-class Loss {
+class LossLayers {
 public:
-    explicit Loss(LossType type) : type_(type) {
+    explicit LossLayers(LossType type) : type_(type) {
     }
 
     double forward(const Matrix& y_hat, const Matrix& y) const {

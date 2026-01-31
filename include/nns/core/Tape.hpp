@@ -22,6 +22,10 @@ struct Tape {
         nodes.clear();
         return grad;
     }
+
+    void clear() {
+        nodes.clear();
+    }
 };
 
 using TapePtr = std::shared_ptr<Tape>;

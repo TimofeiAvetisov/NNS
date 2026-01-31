@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <memory>
 
-class ActivationLayer{
+class ActivationLayer {
 public:
     explicit ActivationLayer(AnyScalarActivation activation) : act_(std::move(activation)) {
         if (!act_.isDefined()) {
@@ -22,6 +22,12 @@ public:
     Matrix forward(const Matrix& X, Tape& tape, LinearGrads* /*grads*/) {
         Matrix Y = X.unaryExpr([this](double x) { return act_->forward(x); });
         tape.push(std::make_unique<ActivationNode>(X, Y, act_));
+
+        return Y;
+    }
+
+    Matrix predict(const Matrix& X) {
+        Matrix Y = X.unaryExpr([this](double x) { return act_->forward(x); });
         return Y;
     }
 
