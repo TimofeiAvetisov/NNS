@@ -14,7 +14,7 @@ public:
         }
     }
     LinearLayer(size_t in_dim, size_t out_dim, InitScheme init_scheme = InitScheme::XavierNormal,
-                double gain = 1.0, std::shared_ptr<RandomGenerator> rng = nullptr) {
+                double gain = 1.0, std::shared_ptr<RandomGenerator> rng) {
         if (!rng) {
             throw std::invalid_argument("LinearLayer constructor: rng is nullptr");
         }
@@ -22,15 +22,26 @@ public:
         b_ = Vector::Zero(static_cast<int>(out_dim));
     }  // rng will be provided thru NeuralNetwork
 
-    Matrix forward(const Matrix& X, Tape& tape, LinearGrads& grads) {
+    Matrix forward(const Matrix& X, Tape& tape, LinearGrads* grads) {
+        if (!grads) {
+            throw std::invalid_argument("LinearLayer::forward: grads is nullptr");
+        }
         Matrix Y = A_ * X;
         Y.colwise() += b_;
 
-        tape.push(std::make_unique<LinearNode>(X, A_, grads.dA, grads.db));
-
+        tape.push(std::make_unique<LinearNode>(X, A_, grads->dA, grads->db));
         return Y;
     }
 
+    void sgd_step(double lr, LinearGrads* grads) {
+        if (!grads) {
+            throw std::invalid_argument("LinearLayer::sgd_step: grads is nullptr");
+        }
+        A_ -= lr * grads->dA;
+        b_ -= lr * grads->db;
+    }
+
+    // test purpose only
     int in_dim() const {
         return static_cast<int>(A_.cols());
     };
