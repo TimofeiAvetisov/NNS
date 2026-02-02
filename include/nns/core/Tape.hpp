@@ -6,7 +6,7 @@
 
 struct TapeNode {
     virtual ~TapeNode() = default;
-    virtual Matrix backward(const Matrix& grad_output) = 0;
+    virtual void backward(Matrix& grad_output) = 0;
 };
 
 struct Tape {
@@ -16,12 +16,11 @@ struct Tape {
         nodes.push_back(std::move(node));
     }
 
-    Matrix backward(Matrix grad) {
+    void backward(Matrix& grad) {
         for (auto it = nodes.rbegin(); it != nodes.rend(); ++it) {
-            grad = (*it)->backward(grad);
+            (*it)->backward(grad);
         }
         nodes.clear();
-        return grad;
     }
 
     void clear() {

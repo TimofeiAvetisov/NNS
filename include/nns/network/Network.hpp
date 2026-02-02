@@ -11,29 +11,25 @@
 #include <initializer_list>
 #include <utility>
 #include <stdexcept>
+#include <variant>
 
 
 class NeuralNetwork {
 public:
-    // initializer list of layers {{linlayersz_1, linlayersz_2, act1}, {linlayersz_2, linlayersz_3,
-    // act2}, ...} somehow need to pass LossLayer
-    NeuralNetwork(std::initializer_list<std::pair<std::pair<size_t, size_t>, ActivationFactory>>
-                      layer_configs) {
-        rng_ = std::make_shared<RandomGenerator>();
-        grads_.reserve(layer_configs.size() *
-                       2);  // each layer pair has LinearLayer and ActivationLayer
-        layers_.reserve(layer_configs.size() * 2);
-        for (const auto& config : layer_configs) {
-            size_t in_dim = config.first.first;
-            size_t out_dim = config.first.second;
-            ActivationFactory act_factory = config.second;
+    // move-only
+    NeuralNetwork() = default;
+    NeuralNetwork(const NeuralNetwork&) = delete;
+    NeuralNetwork& operator=(const NeuralNetwork&) = delete;
+    NeuralNetwork(NeuralNetwork&&) = default;
+    NeuralNetwork& operator=(NeuralNetwork&&) = default;
 
-            layers_.push_back(std::make_unique<AnyLayer>(
-                MakeLinearLayer(in_dim, out_dim, rng_, InitScheme::XavierNormal, 1.0)));
-            layers_.push_back(std::make_unique<AnyLayer>(ActivationLayer(act_factory())));
-            grads_.emplace_back(out_dim, in_dim);
-            grads_.emplace_back(0, 0);  // ActivationLayer has no grads
-        }
+
+    template <class... Args>
+    explicit NeuralNetwork(Args&&... args) {
+        layers_.reserve(sizeof...(Args));
+        grads_.reserve(sizeof...(Args));
+
+        (push_one(std::forward<Args>(args)), ...);
     }
 
     Matrix predict(const Matrix& X) {
@@ -44,33 +40,23 @@ public:
         return out;
     }
 
-    double train_step(const Matrix& X, const Matrix& y, double lr) {
-        Tape tape;  // need to review it
-
-        // Forward pass
+    Matrix forward(const Matrix& X, const Matrix& y) {
         Matrix out = X;
         for (size_t i = 0; i < layers_.size(); ++i) {
-            out = (*layers_[i])->forward(out, tape, &grads_[i]);
+            out = (*layers_[i])->forward(out, tape_, &grads_[i]);
         }
-        // Compute loss
-        const double loss = loss_layer_.forward(out, y);
-
-        // Compute initial gradient from loss
-        Matrix dL_dy = loss_layer_.backward(out, y);
-
-        // Backward pass
-        tape.backward(dL_dy);
-
-        // SGD step aka update weights
-        for (size_t i = 0; i < layers_.size(); ++i) {
-            (*layers_[i])->sgd_step(lr, &grads_[i]);
-        }
-        zero_grads();
-        return loss;
+        return out;
     }
 
-    void set_loss(LossType type = LossType::MSE) {  // Need to think about it
-        loss_layer_ = LossLayers(type);
+    void backward(Matrix& dL_dy) {
+        tape_.backward(dL_dy);
+    }
+
+    void update_weights(double lr/*should be optimizer*/) {
+        for (size_t i = 0; i < layers_.size(); ++i) {
+            (*layers_[i])->sgd_step(lr/*should be optimizer*/, &grads_[i]);
+        }
+        zero_grads();
     }
 
     void reseed_rng(uint32_t seed) {
@@ -81,15 +67,42 @@ public:
         rng_->show_seed();
     }
 
-    void zero_grads() {
-        for (auto& grad : grads_) {
-            grad.set_zero();
-        }
-    }
 
 private:
     std::shared_ptr<RandomGenerator> rng_;
     std::vector<std::unique_ptr<AnyLayer>> layers_;
     std::vector<LinearGrads> grads_;
-    LossLayers loss_layer_{LossType::MSE};
+    Tape tape_;
+
+    template <class T>
+    void push_one(T&& x) {
+        LayerVariant v{std::forward<T>(x)};
+        push_variant(std::move(v));
+    }
+
+    using LayerVariant = std::variant<LinearLayer, AnyScalarActivation>;
+    void push_variant(LayerVariant&& v) {
+        std::visit([&](auto&& obj) {
+            using U = std::remove_cvref_t<decltype(obj)>;
+
+            if constexpr (std::is_same_v<U, LinearLayer>) {
+                const auto out_dim = obj.out_dim();
+                const auto in_dim  = obj.in_dim();
+
+                layers_.push_back(std::make_unique<AnyLayer>(std::move(obj)));
+                grads_.emplace_back(out_dim, in_dim);
+            } else {
+                layers_.push_back(std::make_unique<AnyLayer>(
+                    ActivationLayer(std::move(obj))
+                ));
+                grads_.emplace_back(0, 0);
+            }
+        }, std::move(v));
+    }
+
+    void zero_grads() {
+        for (auto& grad : grads_) {
+            grad.set_zero();
+        }
+    }
 };

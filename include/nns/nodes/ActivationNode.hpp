@@ -14,20 +14,18 @@ struct ActivationNode : public TapeNode {
         : X_(std::move(X)), Y_(std::move(Y)), act_(&act) {
     }
 
-    Matrix backward(const Matrix& grad) override {
+    void backward(Matrix& grad) override {
         if ((grad.rows() != Y_.rows()) || (grad.cols() != Y_.cols())) {
             throw std::invalid_argument(
                 "ActivationLayer::backward: dimension mismatch between dY and last_Y_");
         }
 
-        Matrix dX = grad;
         for (int i = 0; i < grad.rows(); ++i) {
             for (int j = 0; j < grad.cols(); ++j) {
                 double x = X_(i, j);
                 double y = Y_(i, j);
-                dX(i, j) *= (*act_)->derivative(x, y);
+                grad(i, j) *= (*act_)->derivative(x, y);
             }
         }
-        return dX;
     }
 };

@@ -14,9 +14,9 @@ struct LinearNode : public TapeNode {
     }
 
     // forward pass we have Y = A * X + b
-    Matrix backward(const Matrix& grad) override {
+    void backward(Matrix& grad) override {
         (*dA_).noalias() += grad * X_.transpose();
         (*db_).noalias() += grad.rowwise().sum();
-        return A_.transpose() * grad;
+        grad = A_.transpose() * grad;
     }
 };
