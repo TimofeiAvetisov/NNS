@@ -14,12 +14,10 @@ public:
             throw std::invalid_argument("LinearLayer constructor: incompatible dimensions");
         }
     }
-    LinearLayer(size_t in_dim, size_t out_dim, std::shared_ptr<RandomGenerator> rng, InitScheme init_scheme = InitScheme::XavierNormal,
+    LinearLayer(size_t in_dim, size_t out_dim, InitScheme init_scheme = InitScheme::XavierNormal,
                 double gain = 1.0) {
-        if (!rng) {
-            throw std::invalid_argument("LinearLayer constructor: rng is nullptr");
-        }
-        A_ = rng->init_linear_weights(out_dim, in_dim, init_scheme, gain);
+        
+        A_ = RandomGenerator::instance().init_linear_weights(out_dim, in_dim, init_scheme, gain);
         b_ = Vector::Zero(static_cast<Eigen::Index>(out_dim));
     }  // rng will be provided thru NeuralNetwork
 

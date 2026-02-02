@@ -58,18 +58,16 @@ public:
         }
         zero_grads();
     }
-
-    void reseed_rng(uint32_t seed) {
-        rng_->reseed(seed);
+    static void reseed_rng(uint32_t seed) {
+        RandomGenerator::instance().reseed(seed);
     }
 
-    void show_rng_seed() {
-        rng_->show_seed();
+    static void show_rng_seed() {
+        RandomGenerator::instance().show_seed();
     }
 
 
 private:
-    std::shared_ptr<RandomGenerator> rng_;
     std::vector<std::unique_ptr<AnyLayer>> layers_;
     std::vector<LinearGrads> grads_;
     Tape tape_;
