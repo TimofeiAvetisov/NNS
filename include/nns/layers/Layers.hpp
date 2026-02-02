@@ -28,10 +28,10 @@ concept LayerLike =
     };
 
 template <class Base, class TObject>
-class CLayerImpl final : public Base {
+class CLayerImpl : public Base {
     static_assert(LayerLike<TObject>,
                   "Layer must provide: "
-                  "Matrix forward(const Matrix&, Tape&, LinearGrads*, bool is_training), "
+                  "Matrix forward(const Matrix&, Tape&, LinearGrads*), "
                   "void sgd_step(double, LinearGrads*), "
                   "Matrix predict(const Matrix&)");
 
@@ -40,9 +40,8 @@ public:
     explicit CLayerImpl(U&& obj) : object_(std::forward<U>(obj)) {
     }
 
-    Matrix forward(const Matrix& X, Tape& tape, LinearGrads* grads,
-                   bool is_training = true) override {
-        return object_.forward(X, tape, grads, is_training);
+    Matrix forward(const Matrix& X, Tape& tape, LinearGrads* grads) override {
+        return object_.forward(X, tape, grads);
     }
 
     Matrix predict(const Matrix& X) override {

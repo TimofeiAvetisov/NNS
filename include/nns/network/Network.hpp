@@ -40,7 +40,7 @@ public:
         return out;
     }
 
-    Matrix forward(const Matrix& X, const Matrix& y) {
+    Matrix forward(const Matrix& X) {
         Matrix out = X;
         for (size_t i = 0; i < layers_.size(); ++i) {
             out = (*layers_[i])->forward(out, tape_, &grads_[i]);
@@ -76,6 +76,11 @@ private:
 
     template <class T>
     void push_one(T&& x) {
+        static_assert(
+            std::is_constructible_v<LinearLayer, T&&> ||
+            std::is_constructible_v<AnyScalarActivation, T&&>,
+            "NeuralNetwork ctor: Must be constructible as LinearLayer or AnyScalarActivation"
+        );
         LayerVariant v{std::forward<T>(x)};
         push_variant(std::move(v));
     }
