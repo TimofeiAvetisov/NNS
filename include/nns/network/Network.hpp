@@ -1,10 +1,8 @@
 #pragma once
 #include <nns/core/Types.hpp>
 #include <nns/layers/Layers.hpp>
-#include <nns/core/Tape.hpp>
 #include <nns/grads/LinearGrads.hpp>
 #include <nns/activation/BuiltinActivations.hpp>
-#include <nns/layers/LossLayers.hpp>
 #include <Random.hpp>
 #include <vector>
 #include <memory>
@@ -27,37 +25,46 @@ public:
     template <class... Args>
     explicit NeuralNetwork(Args&&... args) {
         layers_.reserve(sizeof...(Args));
-        grads_.reserve(sizeof...(Args));
 
         (push_one(std::forward<Args>(args)), ...);
     }
 
-    Matrix predict(const Matrix& X) {
-        Matrix out = X;
+    Matrix predict(Matrix X) {
         for (const auto& layer : layers_) {
-            out = (*layer)->predict(out);
+            X = std::move(layer->predict(std::move(X)));
         }
-        return out;
+        return X;
     }
 
-    Matrix forward(const Matrix& X) {
-        Matrix out = X;
+    Matrix forward(Matrix X) {
         for (size_t i = 0; i < layers_.size(); ++i) {
-            out = (*layers_[i])->forward(out, tape_, &grads_[i]);
+            X = std::move((*layers_[i])->forward(std::move(X)));
         }
-        return out;
+        return X;
     }
 
-    void backward(Matrix& dL_dy) {
-        tape_.backward(dL_dy);
-    }
+    void backward(Matrix& dL_dy, std::vector<LinearGrads>& grads) {
+        if (layers_.empty()) {
+            throw std::runtime_error("NeuralNetwork::backward: no layers in the network");
+        }
 
-    void update_weights(double lr/*should be optimizer*/) {
+        grads.reserve(layers_.size());
         for (size_t i = 0; i < layers_.size(); ++i) {
-            (*layers_[i])->sgd_step(lr/*should be optimizer*/, &grads_[i]);
+            grads.push_back(std::move((*layers_[i])->form_grads()));
         }
-        zero_grads();
+
+        for (size_t i = 0; i < layers_.size(); ++i) {
+            size_t rev_i = layers_.size() - 1 - i;
+            dL_dy = std::move((*layers_[rev_i])->backward(std::move(dL_dy), grads[rev_i]));
+        }
     }
+
+    void update_weights(double lr/*should be optimizer*/, std::vector<LinearGrads> grads) {
+        for (size_t i = 0; i < layers_.size(); ++i) {
+            (*layers_[i])->sgd_step(lr/*should be optimizer*/, std::move(grads[i]));
+        }
+    }
+
     static void reseed_rng(uint32_t seed) {
         RandomGenerator::instance().reseed(seed);
     }
@@ -69,7 +76,6 @@ public:
 
 private:
     std::vector<std::unique_ptr<AnyLayer>> layers_;
-    std::vector<LinearGrads> grads_;
     Tape tape_;
 
     template <class T>
@@ -93,19 +99,11 @@ private:
                 const auto in_dim  = obj.in_dim();
 
                 layers_.push_back(std::make_unique<AnyLayer>(std::move(obj)));
-                grads_.emplace_back(out_dim, in_dim);
             } else {
                 layers_.push_back(std::make_unique<AnyLayer>(
                     ActivationLayer(std::move(obj))
                 ));
-                grads_.emplace_back(0, 0);
             }
         }, std::move(v));
-    }
-
-    void zero_grads() {
-        for (auto& grad : grads_) {
-            grad.set_zero();
-        }
     }
 };

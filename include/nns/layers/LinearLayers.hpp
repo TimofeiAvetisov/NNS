@@ -1,7 +1,5 @@
 #pragma once
 #include <nns/core/Types.hpp>
-#include <nns/nodes/LinearNode.hpp>
-#include <nns/core/Tape.hpp>
 #include <nns/grads/LinearGrads.hpp>
 #include <Random.hpp>
 #include <memory>
@@ -19,16 +17,12 @@ public:
         
         A_ = RandomGenerator::instance().init_linear_weights(out_dim, in_dim, init_scheme, gain);
         b_ = Vector::Zero(static_cast<Eigen::Index>(out_dim));
-    }  // rng will be provided thru NeuralNetwork
+    }
 
-    Matrix forward(const Matrix& X, Tape& tape, LinearGrads* grads) {
-        if (!grads) {
-            throw std::invalid_argument("LinearLayer::forward: grads is nullptr");
-        }
+    Matrix forward(Matrix X) {
         Matrix Y = A_ * X;
         Y.colwise() += b_;
-        tape.push(std::make_unique<LinearNode>(X, A_, grads->dA, grads->db));
-
+        cache_X_ = std::move(X);
         return Y;
     }
 
@@ -38,12 +32,22 @@ public:
         return Y;
     }
 
-    void sgd_step(double lr, LinearGrads* grads) {
+    Matrix backward(Matrix dY, LinearGrads& grads) {
+        grads.dA.noalias() += dY * cache_X_.transpose();
+        grads.db.noalias() += dY.rowwise().sum();
+        return A_.transpose() * dY;
+    }
+
+    void sgd_step(double lr, LinearGrads grads) {
         if (!grads) {
             throw std::invalid_argument("LinearLayer::sgd_step: grads is nullptr");
         }
-        A_ -= lr * grads->dA;
-        b_ -= lr * grads->db;
+        A_.noalias() -= lr * (*grads.dA);
+        b_.noalias() -= lr * (*grads.db);
+    }
+
+    LinearGrads form_grads() const {
+        return LinearGrads(A_.rows(), A_.cols()); 
     }
 
     // test purpose only
@@ -72,4 +76,5 @@ private:
     // weights and biases
     Matrix A_;  // shape (out_dim, in_dim)
     Vector b_;  // shape (out_dim)
+    Matrix cache_X_;  // shape (in_dim, batch_size)
 };
