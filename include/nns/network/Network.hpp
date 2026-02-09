@@ -11,7 +11,6 @@
 #include <stdexcept>
 #include <variant>
 
-
 class NeuralNetwork {
 public:
     // move-only
@@ -21,7 +20,6 @@ public:
     NeuralNetwork(NeuralNetwork&&) = default;
     NeuralNetwork& operator=(NeuralNetwork&&) = default;
 
-
     template <class... Args>
     explicit NeuralNetwork(Args&&... args) {
         layers_.reserve(sizeof...(Args));
@@ -30,38 +28,40 @@ public:
     }
 
     Matrix predict(Matrix X) {
-        for (const auto& layer : layers_) {
-            X = std::move(layer->predict(std::move(X)));
+        for (size_t i = 0; i < layers_.size(); ++i) {
+            X = std::move(layers_[i]->predict(X));
         }
         return X;
     }
 
     Matrix forward(Matrix X) {
         for (size_t i = 0; i < layers_.size(); ++i) {
-            X = std::move((*layers_[i])->forward(std::move(X)));
+            X = std::move(layers_[i]->forward(std::move(X)));
         }
         return X;
     }
 
-    void backward(Matrix& dL_dy, std::vector<LinearGrads>& grads) {
+    std::vector<LinearGrads> backward(Matrix& dL_dy) {
         if (layers_.empty()) {
             throw std::runtime_error("NeuralNetwork::backward: no layers in the network");
         }
 
+        std::vector<LinearGrads> grads;
         grads.reserve(layers_.size());
         for (size_t i = 0; i < layers_.size(); ++i) {
-            grads.push_back(std::move((*layers_[i])->form_grads()));
+            grads.push_back(std::move(layers_[i]->form_grads()));
         }
 
         for (size_t i = 0; i < layers_.size(); ++i) {
             size_t rev_i = layers_.size() - 1 - i;
-            dL_dy = std::move((*layers_[rev_i])->backward(std::move(dL_dy), grads[rev_i]));
+            dL_dy = std::move(layers_[rev_i]->backward(std::move(dL_dy), grads[rev_i]));
         }
+        return grads;
     }
 
-    void update_weights(double lr/*should be optimizer*/, std::vector<LinearGrads> grads) {
+    void update_weights(double lr /*should be optimizer*/, std::vector<LinearGrads> grads) {
         for (size_t i = 0; i < layers_.size(); ++i) {
-            (*layers_[i])->sgd_step(lr/*should be optimizer*/, std::move(grads[i]));
+            layers_[i]->sgd_step(lr /*should be optimizer*/, std::move(grads[i]));
         }
     }
 
@@ -73,37 +73,34 @@ public:
         RandomGenerator::instance().show_seed();
     }
 
-
 private:
-    std::vector<std::unique_ptr<AnyLayer>> layers_;
-    Tape tape_;
+    std::vector<AnyLayer> layers_;
 
     template <class T>
     void push_one(T&& x) {
         static_assert(
             std::is_constructible_v<LinearLayer, T&&> ||
-            std::is_constructible_v<AnyScalarActivation, T&&>,
-            "NeuralNetwork ctor: Must be constructible as LinearLayer or AnyScalarActivation"
-        );
+                std::is_constructible_v<AnyScalarActivation, T&&>,
+            "NeuralNetwork ctor: Must be constructible as LinearLayer or AnyScalarActivation");
         LayerVariant v{std::forward<T>(x)};
         push_variant(std::move(v));
     }
 
     using LayerVariant = std::variant<LinearLayer, AnyScalarActivation>;
     void push_variant(LayerVariant&& v) {
-        std::visit([&](auto&& obj) {
-            using U = std::remove_cvref_t<decltype(obj)>;
+        std::visit(
+            [&](auto&& obj) {
+                using U = std::remove_cvref_t<decltype(obj)>;
 
-            if constexpr (std::is_same_v<U, LinearLayer>) {
-                const auto out_dim = obj.out_dim();
-                const auto in_dim  = obj.in_dim();
+                if constexpr (std::is_same_v<U, LinearLayer>) {
+                    const auto out_dim = obj.out_dim();
+                    const auto in_dim = obj.in_dim();
 
-                layers_.push_back(std::make_unique<AnyLayer>(std::move(obj)));
-            } else {
-                layers_.push_back(std::make_unique<AnyLayer>(
-                    ActivationLayer(std::move(obj))
-                ));
-            }
-        }, std::move(v));
+                    layers_.push_back(AnyLayer(std::move(obj)));
+                } else {
+                    layers_.push_back(AnyLayer(ActivationLayer(std::move(obj))));
+                }
+            },
+            std::move(v));
     }
 };

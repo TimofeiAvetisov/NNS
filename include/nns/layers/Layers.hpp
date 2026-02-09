@@ -12,22 +12,21 @@
 
 struct ILayer {
     virtual Matrix forward(Matrix X) = 0;
-    virtual Matrix predict(const Matrix& X) = 0;
-    virtual Matrix backward(Matrix dY, LinearGrads& grads) = 0;
-    virtual void sgd_step(double lr, LinearGrads& grads) = 0;  // ActivationLayer do nothing
+    virtual Matrix predict(Matrix X) = 0;
+    virtual Matrix backward(Matrix dY, LinearGrads grads) = 0;
+    virtual void sgd_step(double lr, LinearGrads grads) = 0;  // ActivationLayer do nothing
     virtual LinearGrads form_grads() const = 0;
     virtual ~ILayer() = default;
 };
 
 template <class T>
-concept LayerLike =
-    requires(T& t, const Matrix& X, LinearGrads* g, const double lr) {
-        { t.forward(X) } -> std::same_as<Matrix>;
-        { t.sgd_step(lr, g) } -> std::same_as<void>;
-        { t.predict(X) } -> std::same_as<Matrix>;
-        { t.backward(X, g) } -> std::same_as<Matrix>;
-        { t.form_grads() } -> std::same_as<LinearGrads>;
-    };
+concept LayerLike = requires(T& t, Matrix X, LinearGrads g, double lr) {
+    { t.forward(X) } -> std::same_as<Matrix>;
+    { t.sgd_step(lr, g) } -> std::same_as<void>;
+    { t.predict(X) } -> std::same_as<Matrix>;
+    { t.backward(X, g) } -> std::same_as<Matrix>;
+    { t.form_grads() } -> std::same_as<LinearGrads>;
+};
 
 template <class Base, class TObject>
 class CLayerImpl : public Base {
@@ -45,24 +44,24 @@ public:
     }
 
     Matrix forward(Matrix X) override {
-        return object_.forward(X);
+        return object_.forward(std::move(X));
     }
 
-    Matrix predict(const Matrix& X) override {
-        return object_.predict(X);
+    Matrix predict(Matrix X) override {
+        return object_.predict(std::move(X));
     }
 
-    Matrix backward(Matrix dY, LinearGrads& grads) override {
+    Matrix backward(Matrix dY, LinearGrads grads) override {
 
-        return object_.backward(dY, grads);
+        return object_.backward(std::move(dY), std::move(grads));
     }
 
     LinearGrads form_grads() const override {
         return object_.form_grads();
     }
 
-    void sgd_step(double lr, LinearGrads& grads) override {
-        object_.sgd_step(lr, grads);
+    void sgd_step(double lr, LinearGrads grads) override {
+        object_.sgd_step(lr, std::move(grads));
     }
 
 private:

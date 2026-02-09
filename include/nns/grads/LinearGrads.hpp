@@ -7,8 +7,7 @@ struct LinearGrads {
     Vector db;
 
     LinearGrads(Index out_dim, Index in_dim)
-        : dA(Matrix::Zero(out_dim, in_dim)),
-          db(Vector::Zero(out_dim)) {
+        : dA(Matrix::Zero(out_dim, in_dim)), db(Vector::Zero(out_dim)) {
     }
 
     void set_zero() {

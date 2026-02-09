@@ -14,7 +14,7 @@ public:
     }
     LinearLayer(size_t in_dim, size_t out_dim, InitScheme init_scheme = InitScheme::XavierNormal,
                 double gain = 1.0) {
-        
+
         A_ = RandomGenerator::instance().init_linear_weights(out_dim, in_dim, init_scheme, gain);
         b_ = Vector::Zero(static_cast<Eigen::Index>(out_dim));
     }
@@ -26,28 +26,25 @@ public:
         return Y;
     }
 
-    Matrix predict(const Matrix& X) {
-        Matrix Y = A_ * X;
-        Y.colwise() += b_;
-        return Y;
+    Matrix predict(Matrix X) {
+        X = A_ * X;
+        X.colwise() += b_;
+        return X;
     }
 
-    Matrix backward(Matrix dY, LinearGrads& grads) {
+    Matrix backward(Matrix dY, LinearGrads grads) {
         grads.dA.noalias() += dY * cache_X_.transpose();
         grads.db.noalias() += dY.rowwise().sum();
         return A_.transpose() * dY;
     }
 
     void sgd_step(double lr, LinearGrads grads) {
-        if (!grads) {
-            throw std::invalid_argument("LinearLayer::sgd_step: grads is nullptr");
-        }
-        A_.noalias() -= lr * (*grads.dA);
-        b_.noalias() -= lr * (*grads.db);
+        A_.noalias() -= lr * grads.dA;
+        b_.noalias() -= lr * grads.db;
     }
 
     LinearGrads form_grads() const {
-        return LinearGrads(A_.rows(), A_.cols()); 
+        return LinearGrads(A_.rows(), A_.cols());
     }
 
     // test purpose only
@@ -74,7 +71,7 @@ public:
 
 private:
     // weights and biases
-    Matrix A_;  // shape (out_dim, in_dim)
-    Vector b_;  // shape (out_dim)
+    Matrix A_;        // shape (out_dim, in_dim)
+    Vector b_;        // shape (out_dim)
     Matrix cache_X_;  // shape (in_dim, batch_size)
 };

@@ -25,12 +25,12 @@ public:
         return Y;
     }
 
-    Matrix predict(const Matrix& X) {
-        Matrix Y = X.unaryExpr([this](double x) { return act_->forward(x); });
-        return Y;
+    Matrix predict(Matrix X) {
+        X = X.unaryExpr([this](double x) { return act_->forward(x); });
+        return X;
     }
 
-    Matrix backward(Matrix dY, LinearGrads& /*grads*/) override {
+    Matrix backward(Matrix dY, LinearGrads /*grads*/) {
         if ((dY.rows() != cache_Y_.rows()) || (dY.cols() != cache_Y_.cols())) {
             throw std::invalid_argument(
                 "ActivationLayer::backward: dimension mismatch between dY and last_Y_");
@@ -50,7 +50,7 @@ public:
         return LinearGrads(0, 0);
     }
 
-    void sgd_step(double /*lr*/, LinearGrads& /*grads*/) {
+    void sgd_step(double /*lr*/, LinearGrads /*grads*/) {
         // Activation layer has no parameters, so nothing to do here
     }
 
