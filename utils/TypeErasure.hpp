@@ -141,54 +141,55 @@
 // without going through all that nested template mess.
 //
 //---------------------------------------------------------------------------
+namespace nns {
+    template <class Interface, template <class, class> class Implementation>
+    class CAnyMovable {
+        struct IHolder : Interface {
+            virtual std::unique_ptr<IHolder> move_clone() noexcept = 0;
+            ~IHolder() override = default;
+        };
 
-template <class Interface, template <class, class> class Implementation>
-class CAnyMovable {
-    struct IHolder : Interface {
-        virtual std::unique_ptr<IHolder> move_clone() noexcept = 0;
-        ~IHolder() override = default;
-    };
+        template <class T>
+        struct Holder final : Implementation<IHolder, T> {
+            using Base = Implementation<IHolder, T>;
+            using Base::Base;
 
-    template <class T>
-    struct Holder final : Implementation<IHolder, T> {
-        using Base = Implementation<IHolder, T>;
-        using Base::Base;
+            std::unique_ptr<IHolder> move_clone() noexcept override {
+                return std::make_unique<Holder<T>>(std::move(*this));
+            }
+        };
 
-        std::unique_ptr<IHolder> move_clone() noexcept override {
-            return std::make_unique<Holder<T>>(std::move(*this));
+        std::unique_ptr<IHolder> ptr_;
+
+    public:
+        CAnyMovable() = default;
+        CAnyMovable(const CAnyMovable&) = delete;
+        CAnyMovable& operator=(const CAnyMovable&) = delete;
+        CAnyMovable(CAnyMovable&&) noexcept = default;
+        CAnyMovable& operator=(CAnyMovable&&) noexcept = default;
+
+        template <class T>
+        CAnyMovable(T&& v)
+            : ptr_(std::make_unique<Holder<std::remove_cvref_t<T>>>(std::forward<T>(v))) {
+        }
+
+        template <class T, class... Args>
+        void emplace(Args&&... args) {
+            ptr_ = std::make_unique<Holder<T>>(T(std::forward<Args>(args)...));
+        }
+
+        bool isDefined() const noexcept {
+            return static_cast<bool>(ptr_);
+        }
+        void clear() noexcept {
+            ptr_.reset();
+        }
+
+        Interface* operator->() noexcept {
+            return ptr_.get();
+        }
+        const Interface* operator->() const noexcept {
+            return ptr_.get();
         }
     };
-
-    std::unique_ptr<IHolder> ptr_;
-
-public:
-    CAnyMovable() = default;
-    CAnyMovable(const CAnyMovable&) = delete;
-    CAnyMovable& operator=(const CAnyMovable&) = delete;
-    CAnyMovable(CAnyMovable&&) noexcept = default;
-    CAnyMovable& operator=(CAnyMovable&&) noexcept = default;
-
-    template <class T>
-    CAnyMovable(T&& v)
-        : ptr_(std::make_unique<Holder<std::remove_cvref_t<T>>>(std::forward<T>(v))) {
-    }
-
-    template <class T, class... Args>
-    void emplace(Args&&... args) {
-        ptr_ = std::make_unique<Holder<T>>(T(std::forward<Args>(args)...));
-    }
-
-    bool isDefined() const noexcept {
-        return static_cast<bool>(ptr_);
-    }
-    void clear() noexcept {
-        ptr_.reset();
-    }
-
-    Interface* operator->() noexcept {
-        return ptr_.get();
-    }
-    const Interface* operator->() const noexcept {
-        return ptr_.get();
-    }
-};
+}
