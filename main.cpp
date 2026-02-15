@@ -6,11 +6,8 @@ using namespace nns;
 
 int main() {
 
-    NeuralNetwork net(
-        LinearLayer(IN{2}, OUT{10}, InitScheme::Normal),
-        ReLU(),
-        LinearLayer(IN{10}, OUT{1}, InitScheme::Normal)
-    );
+    NeuralNetwork net(LinearLayer(IN{2}, OUT{10}, InitScheme::Normal), ReLU(),
+                      LinearLayer(IN{10}, OUT{1}, InitScheme::Normal));
 
     Matrix X(2, 1);
     X << 1, 2;
@@ -25,5 +22,4 @@ int main() {
         std::cout << r.dA << "Db\n" << r.db << '\n';
     }
     std::cout << Y << "\n";
-
 }

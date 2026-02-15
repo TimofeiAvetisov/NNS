@@ -44,8 +44,12 @@
 
 .*
 build/
+build-ninja/
 
 !.clang-format
+!.clang-tidy
 bin/
 
 files.txt
+tidy-output.txt
+reminder.txt
