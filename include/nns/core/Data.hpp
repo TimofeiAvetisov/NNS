@@ -7,7 +7,6 @@ namespace nns {
 class Data {
 public:
     explicit Data(Matrix data) : data_(std::move(data)), type_(typeid(Matrix)) {}
-
     explicit Data(Vector data) : data_(std::move(data)), type_(typeid(Vector)) {}
 
     Data () : type_(typeid(void)) {}

@@ -1,9 +1,12 @@
 #pragma once
 #include <nns/core/Types.hpp>
 #include <nns/grads/LinearGrads.hpp>
+#include <nns/core/Parameters.hpp>
+#include <nns/core/Cache.hpp>
 #include <Random.hpp>
 #include <memory>
 #include <stdexcept>
+#include <utility>
 
 namespace nns {
 
@@ -12,72 +15,47 @@ enum OUT : size_t;
 
 class LinearLayer {
 public:
-    LinearLayer(const Matrix& A_init, const Vector& b_init) : A_(A_init), b_(b_init) {
-        if (A_.rows() != b_.size()) {
-            throw std::invalid_argument("LinearLayer constructor: incompatible dimensions");
-        }
-    }
+    LinearLayer() : A_(Parameter(Matrix())), b_(Parameter(Vector())) {};
     LinearLayer(IN in_dim, OUT out_dim, InitScheme init_scheme = InitScheme::XavierNormal,
                 double gain = 1.0) {
-
-        A_ = RandomGenerator::instance().init_linear_weights(out_dim, in_dim, init_scheme, gain);
-        b_ = Vector::Zero(static_cast<Eigen::Index>(out_dim));
+        A_ = Parameter(RandomGenerator::instance().init_linear_weights(out_dim, in_dim, init_scheme, gain));
+        b_ = Parameter((Vector::Zero(static_cast<Eigen::Index>(out_dim))).eval());
     }
 
-    Matrix forward(Matrix X) {
-        Matrix Y = A_ * X;
-        Y.colwise() += b_;
-        cache_X_ = std::move(X);
-        return Y;
+    std::pair<Matrix, Cache> forward(Matrix X) {
+        Matrix Y = A_.data_matrix() * X;
+        Y.colwise() += b_.data_vector();
+        return std::make_pair(Y, Cache(std::move(X)));
     }
 
     Matrix predict(Matrix X) {
-        X = A_ * X;
-        X.colwise() += b_;
+        X = A_.data_matrix() * X;
+        X.colwise() += b_.data_vector();
         return X;
     }
 
-    Matrix backward(Matrix dY, LinearGrads* grads) {
-        grads->dA.noalias() += dY * cache_X_.transpose();
-        grads->db.noalias() += dY.rowwise().sum();
-        return A_.transpose() * dY;
+    Matrix backward(Matrix dY, Cache cache) {
+        A_.add_grad((dY * cache.get_X().transpose()).eval());
+        b_.add_grad((dY.rowwise().sum()).eval());
+        return A_.data_matrix().transpose() * dY;
     }
 
     void sgd_step(double lr, LinearGrads grads) {
-        A_.noalias() -= lr * grads.dA;
-        b_.noalias() -= lr * grads.db;
+        A_.add_grad((-lr * grads.dA).eval());
+        b_.add_grad((-lr * grads.db).eval());
     }
 
-    LinearGrads form_grads() const {
-        return LinearGrads(A_.rows(), A_.cols());
+    Parameter* get_weights_param() {
+        return &A_;
     }
 
-    // test purpose only
-    int in_dim() const {
-        return static_cast<int>(A_.cols());
-    };
-    int out_dim() const {
-        return static_cast<int>(A_.rows());
-    };
-
-    const Matrix& get_weights() const {
-        return A_;
-    }
-    const Vector& get_biases() const {
-        return b_;
-    }
-
-    Matrix& weights_mut() {
-        return A_;
-    }
-    Vector& biases_mut() {
-        return b_;
+    Parameter* get_biases_param() {
+        return &b_;
     }
 
 private:
     // weights and biases
-    Matrix A_;        // shape (out_dim, in_dim)
-    Vector b_;        // shape (out_dim)
-    Matrix cache_X_;  // shape (in_dim, batch_size)
+    Parameter A_;        // shape (out_dim, in_dim)
+    Parameter b_;        // shape (out_dim)
 };
 }  // namespace nns
