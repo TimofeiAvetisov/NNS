@@ -23,7 +23,7 @@ public:
 
     std::pair<Matrix, Cache> forward(Matrix X) {
         Matrix Y = X.unaryExpr([this](double x) { return act_->forward(x); });
-        return {Y, Cache(std::move(X), Y)};
+        return {Y, Cache(Data(std::move(X)), Data(Y))};
     }
 
     Matrix predict(Matrix X) {

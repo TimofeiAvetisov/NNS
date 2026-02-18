@@ -12,14 +12,11 @@ int main() {
     Matrix X(2, 1);
     X << 1, 2;
     LossLayers loss(LossType::MSE);
-    Matrix Y = net.forward(X);
+    auto [Y, cache] = net.forward(X);
     Matrix Y_ = Matrix::Ones(1, 1);
     std::cout << Y << ' ' << Y_ << '\n';
     auto dl_dy = loss.backward(Y, Y_);
     std::cout << "Loss backward dL_dy: " << dl_dy << '\n';
-    auto R = std::move(net.backward(dl_dy));
-    for (auto r : R) {
-        std::cout << r.dA << "Db\n" << r.db << '\n';
-    }
+    auto R = std::move(net.backward(dl_dy, cache));
     std::cout << Y << "\n";
 }

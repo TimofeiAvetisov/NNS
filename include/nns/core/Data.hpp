@@ -6,12 +6,12 @@
 namespace nns {
 class Data {
 public:
-    Data(std::any data) : data_(std::move(data)), type_(data_.type()) {}
+    Data(std::any data) : data_(std::move(data)) {}
 
-    Data () : type_(typeid(void)) {}
+    Data () : data_(std::any{}) {}
 
     bool is_empty() const {
-        return type_ == typeid(void);
+        return data_.type() == typeid(void);
     }
 
     const Matrix& as_matrix() const {
@@ -39,7 +39,7 @@ public:
         return data_;
     }
 
-    const Data& operator[](size_t index) const {
+    Data operator[](size_t index) const {
         return std::any_cast<std::vector<Data>>(data_)[index];
     }
 

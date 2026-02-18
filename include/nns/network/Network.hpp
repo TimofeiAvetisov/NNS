@@ -39,10 +39,11 @@ public:
         std::vector<Cache> caches_X;
         caches_X.reserve(layers_.size());
         for (size_t i = 0; i < layers_.size(); ++i) {
-            auto [X, cache_] = std::move(layers_[i]->forward(std::move(X)));
+            auto [Y, cache_] = std::move(layers_[i]->forward(std::move(X)));
             caches_X.push_back(std::move(cache_));
+            X = std::move(Y);
         }
-        Data cache_data(std::move(caches_X));
+        Cache cache_data(Data(std::move(caches_X)));
         return {X, cache_data};
     }
 
@@ -55,10 +56,11 @@ public:
         grads.reserve(layers_.size());
         for (size_t i = 0; i < layers_.size(); ++i) {
             size_t rev_i = layers_.size() - 1 - i;
-            auto [dL_dy, grad_] = layers_[rev_i]->backward(std::move(dL_dy), cache[rev_i]);
+            auto [dL_dy_new, grad_] = layers_[rev_i]->backward(std::move(dL_dy), cache[rev_i]);
             grads.push_back(std::move(grad_));
+            dL_dy = std::move(dL_dy_new);
         }
-        return grads;
+        return LinearGrads(Data(grads));
     }
 
     void update(const LinearGrads& grads /*, Optimizer opt, OptCache cache*/) {

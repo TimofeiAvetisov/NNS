@@ -21,13 +21,13 @@ struct LinearGrads {
     }
 
     void set_zero() {
-        dA.setZero();
-        db.setZero();
+        dA.set_zero();
+        db.set_zero();
     }
     // std::vector<LinearGrads>
 
-    const LinearGrads& operator[](size_t index) {
-        return std::any_cast<std::vector<LinearGrads>>(dA.get_raw())[index];
+    LinearGrads operator[](size_t index) const {
+        return std::any_cast<std::vector<LinearGrads>>(dA.get_data())[index];
     }
 };
 }  // namespace nns

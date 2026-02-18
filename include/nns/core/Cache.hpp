@@ -18,11 +18,7 @@ public:
         return cache_Y_.as_matrix();
     }
 
-    const std::vector<Cache>& get_vec() const {
-        return std::any_cast<std::vector<Cache>>(cache_X_.get_data());
-    }
-
-    const Cache& operator[](size_t index) const {
+    Cache operator[](size_t index) const {
         return std::any_cast<std::vector<Cache>>(cache_X_.get_data())[index];
     }
 

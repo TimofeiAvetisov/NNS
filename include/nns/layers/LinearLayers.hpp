@@ -24,27 +24,27 @@ public:
     std::pair<Matrix, Cache> forward(Matrix X) {
         Matrix Y = A_ * X;
         Y.colwise() += b_;
-        return std::make_pair(Y, Cache(std::move(X)));
+        return std::make_pair(Y, Cache(Data(std::move(X))));
     }
 
     Matrix predict(Matrix X) {
         X = A_ * X;
-        X.colwise() += b_
+        X.colwise() += b_;
         return X;
     }
 
     std::pair<Matrix, LinearGrads> backward(Matrix dY, const Cache& cache) {
         LinearGrads grads(static_cast<Index>(A_.rows()), static_cast<Index>(A_.cols()));
-        grads.dA = (dY * cache.get_X().transpose()).eval();
-        grads.db = (dY.rowwise().sum()).eval();
+        grads.dA.as_matrix_mutable() = (dY * cache.get_X().transpose()).eval();
+        grads.db.as_vector_mutable() = (dY.rowwise().sum()).eval();
         return {A_.transpose() * dY, std::move(grads)};
     }
 
     void update(const LinearGrads& grads /*, Optimizer opt, OptCache opt_cache*/) {
         // Due to not implemented optimizers
         const double lr = 0.01;
-        A_ -= lr * grads.dA;
-        b_ -= lr * grads.db
+        A_ -= lr * grads.dA.as_matrix();
+        b_ -= lr * grads.db.as_vector();
     }
 
     LinearGrads zero_grads() const {

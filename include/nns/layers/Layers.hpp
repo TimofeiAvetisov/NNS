@@ -26,7 +26,7 @@ concept LayerLike = requires(T& t, Matrix X, const LinearGrads& g, Cache cache, 
     { t.forward(X) } -> std::same_as<std::pair<Matrix, Cache>>;
     { t.update(g) } -> std::same_as<void>;
     { t.predict(X) } -> std::same_as<Matrix>;
-    { t.backward(X, const_cache) } -> std::same_as<Matrix>;
+    { t.backward(X, const_cache) } -> std::same_as<std::pair<Matrix, LinearGrads>>;
     { t.zero_grads() } -> std::same_as<LinearGrads>;
 };
 
@@ -34,10 +34,10 @@ template <class Base, class TObject>
 class CLayerImpl : public Base {
     static_assert(LayerLike<TObject>,
                   "Layer must provide: "
-                  "Matrix forward(Matrix), "
-                  "void sgd_step(double, LinearGrads), "
+                  "std::pair<Matrix, Cache> forward(Matrix), "
+                  "void update(const LinearGrads&), "
                   "Matrix predict(Matrix), "
-                  "Matrix backward(Matrix, Cache), "
+                  "std::pair<Matrix, LinearGrads> backward(Matrix, const Cache&), "
                   "LinearGrads zero_grads() const");
 
 public:
@@ -59,7 +59,7 @@ public:
     }
     
     void update(const LinearGrads& grads) override {
-        object_.sgd_step(std::move(grads));
+        object_.update(grads);
     }
 
 private:
