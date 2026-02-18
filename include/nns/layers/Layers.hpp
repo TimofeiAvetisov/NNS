@@ -17,7 +17,6 @@ struct ILayer {
     virtual Matrix predict(Matrix X) = 0;
     virtual std::pair<Matrix, LinearGrads> backward(Matrix dY, const Cache& cache) = 0;
     virtual void update(const LinearGrads& grads /*, Optimizer opt, OptCache opt_cache*/) = 0;  // ActivationLayer do nothing
-    virtual LinearGrads zero_grads() const = 0;
     virtual ~ILayer() = default;
 };
 
@@ -27,7 +26,6 @@ concept LayerLike = requires(T& t, Matrix X, const LinearGrads& g, Cache cache, 
     { t.update(g) } -> std::same_as<void>;
     { t.predict(X) } -> std::same_as<Matrix>;
     { t.backward(X, const_cache) } -> std::same_as<std::pair<Matrix, LinearGrads>>;
-    { t.zero_grads() } -> std::same_as<LinearGrads>;
 };
 
 template <class Base, class TObject>
@@ -37,8 +35,7 @@ class CLayerImpl : public Base {
                   "std::pair<Matrix, Cache> forward(Matrix), "
                   "void update(const LinearGrads&), "
                   "Matrix predict(Matrix), "
-                  "std::pair<Matrix, LinearGrads> backward(Matrix, const Cache&), "
-                  "LinearGrads zero_grads() const");
+                  "std::pair<Matrix, LinearGrads> backward(Matrix, const Cache&), ");
 
 public:
     template <class U>

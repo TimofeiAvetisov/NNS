@@ -34,8 +34,12 @@ public:
     }
 
     std::pair<Matrix, LinearGrads> backward(Matrix dY, const Cache& cache) {
-        LinearGrads grads(static_cast<Index>(A_.rows()), static_cast<Index>(A_.cols()));
-        grads.dA.as_matrix_mutable() = (dY * cache.get_X().transpose()).eval();
+        LinearGrads grads(Data(std::move(zero_matrix())), Data(std::move(zero_vector())));
+        try {
+            grads.dA.as_matrix_mutable() = (dY * cache.get_X().transpose()).eval();
+        } catch (const std::runtime_error& e) {
+            throw std::runtime_error(std::string("LinearLayer backward: ") + e.what());
+        }
         grads.db.as_vector_mutable() = (dY.rowwise().sum()).eval();
         return {A_.transpose() * dY, std::move(grads)};
     }
@@ -47,13 +51,17 @@ public:
         b_ -= lr * grads.db.as_vector();
     }
 
-    LinearGrads zero_grads() const {
-        return LinearGrads(static_cast<Index>(A_.rows()), static_cast<Index>(A_.cols()));
-    }
-
 private:
     // weights and biases
     Matrix A_;        // shape (out_dim, in_dim)
     Vector b_;        // shape (out_dim)
+
+    Matrix zero_matrix() const {
+        return Matrix::Zero(static_cast<Index>(A_.rows()), static_cast<Index>(A_.cols())).eval();
+    }
+
+    Vector zero_vector() const {
+        return Vector::Zero(static_cast<Index>(A_.size())).eval();
+    }
 };
 }  // namespace nns

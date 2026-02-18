@@ -19,7 +19,12 @@ public:
     }
 
     Cache operator[](size_t index) const {
-        return std::any_cast<std::vector<Cache>>(cache_X_.get_data())[index];
+        try {
+            return std::any_cast<std::vector<Cache>>(cache_X_.get_data())[index];
+        } catch (const std::bad_any_cast& e) {
+            throw std::runtime_error("Cache operator[]: cache_X_ data is not a vector of Cache");
+        }
+        // return std::any_cast<std::vector<Cache>>(cache_X_.get_data())[index];
     }
 
 private:
