@@ -2,6 +2,7 @@
 #include <nns/core/Types.hpp>
 #include <nns/layers/Layers.hpp>
 #include <nns/grads/LinearGrads.hpp>
+#include <nns/core/Cache.hpp>
 #include <nns/activation/BuiltinActivations.hpp>
 #include <Random.hpp>
 #include <vector>
@@ -29,19 +30,23 @@ public:
 
     Matrix predict(Matrix X) {
         for (size_t i = 0; i < layers_.size(); ++i) {
-            X = std::move(layers_[i]->predict(X));
+            X = layers_[i]->predict(std::move(X));
         }
         return X;
     }
 
-    Matrix forward(Matrix X) {
+    std::pair<Matrix, Cache> forward(Matrix X) {
+        std::vector<Cache> caches_X;
+        caches_X.reserve(layers_.size());
         for (size_t i = 0; i < layers_.size(); ++i) {
-            X = std::move(layers_[i]->forward(std::move(X)));
+            auto [X, cache_] = std::move(layers_[i]->forward(std::move(X)));
+            caches_X.push_back(std::move(cache_));
         }
-        return X;
+        Data cache_data(std::move(caches_X));
+        return {X, cache_data};
     }
 
-    std::vector<LinearGrads> backward(Matrix& dL_dy) {
+    LinearGrads backward(Matrix& dL_dy, const Cache& cache) {
         if (layers_.empty()) {
             throw std::runtime_error("NeuralNetwork::backward: no layers in the network");
         }
@@ -49,19 +54,16 @@ public:
         std::vector<LinearGrads> grads;
         grads.reserve(layers_.size());
         for (size_t i = 0; i < layers_.size(); ++i) {
-            grads.push_back(std::move(layers_[i]->form_grads()));
-        }
-
-        for (size_t i = 0; i < layers_.size(); ++i) {
             size_t rev_i = layers_.size() - 1 - i;
-            dL_dy = std::move(layers_[rev_i]->backward(std::move(dL_dy), &grads[rev_i]));
+            auto [dL_dy, grad_] = layers_[rev_i]->backward(std::move(dL_dy), cache[rev_i]);
+            grads.push_back(std::move(grad_));
         }
         return grads;
     }
 
-    void update_weights(double lr /*should be optimizer*/, std::vector<LinearGrads> grads) {
+    void update(const LinearGrads& grads /*, Optimizer opt, OptCache cache*/) {
         for (size_t i = 0; i < layers_.size(); ++i) {
-            layers_[i]->sgd_step(lr /*should be optimizer*/, std::move(grads[i]));
+            layers_[i]->update(grads[i] /*, opt, cache*/);
         }
     }
 

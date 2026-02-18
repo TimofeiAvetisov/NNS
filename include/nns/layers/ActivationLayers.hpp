@@ -3,7 +3,6 @@
 #include <nns/activation/ScalarActivation.hpp>
 #include <nns/grads/LinearGrads.hpp>
 #include <nns/core/Cache.hpp>
-#include <nns/core/Parameters.hpp>
 #include <stdexcept>
 #include <memory>
 #include <utility>
@@ -24,7 +23,7 @@ public:
 
     std::pair<Matrix, Cache> forward(Matrix X) {
         Matrix Y = X.unaryExpr([this](double x) { return act_->forward(x); });
-        return std::make_pair(Y, Cache(std::move(X), Y));
+        return {Y, Cache(std::move(X), Y)};
     }
 
     Matrix predict(Matrix X) {
@@ -32,7 +31,7 @@ public:
         return X;
     }
 
-    Matrix backward(Matrix dY, Cache cache) {
+    std::pair<Matrix, LinearGrads> backward(Matrix dY, const Cache& cache) {
         const Matrix& cache_X = cache.get_X();
         const Matrix& cache_Y = cache.get_Y();
         if ((dY.rows() != cache_Y.rows()) || (dY.cols() != cache_Y.cols())) {
@@ -47,19 +46,15 @@ public:
                 dY(i, j) *= act_->derivative(x, y);
             }
         }
-        return dY;
+        return {dY, LinearGrads()};
     }
 
-    Parameter* get_weights_param() {
-        return nullptr;  // Activation layer has no weights
-    }
-
-    Parameter* get_biases_param() {
-        return nullptr;  // Activation layer has no biases
-    }
-
-    void sgd_step(double /*lr*/, LinearGrads /*grads*/) {
+    void update(const LinearGrads& /*, Optimizer opt, OptCache opt_cache*/) {
         // Activation layer has no parameters, so nothing to do here
+    }
+
+    LinearGrads zero_grads() const {
+        return LinearGrads();
     }
 
 private:

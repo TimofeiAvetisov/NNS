@@ -10,27 +10,24 @@
 #include <nns/layers/LinearLayers.hpp>
 #include <nns/layers/ActivationLayers.hpp>
 #include <nns/core/Cache.hpp>
-#include <nns/core/Parameters.hpp>
 
 namespace nns {
 struct ILayer {
     virtual std::pair<Matrix, Cache> forward(Matrix X) = 0;
     virtual Matrix predict(Matrix X) = 0;
-    virtual Matrix backward(Matrix dY, Cache cache) = 0;
-    virtual void sgd_step(double lr, LinearGrads grads) = 0;  // ActivationLayer do nothing
-    virtual Parameter* get_weights_param() = 0;
-    virtual Parameter* get_biases_param() = 0;
+    virtual std::pair<Matrix, LinearGrads> backward(Matrix dY, const Cache& cache) = 0;
+    virtual void update(const LinearGrads& grads /*, Optimizer opt, OptCache opt_cache*/) = 0;  // ActivationLayer do nothing
+    virtual LinearGrads zero_grads() const = 0;
     virtual ~ILayer() = default;
 };
 
 template <class T>
-concept LayerLike = requires(T& t, Matrix X, LinearGrads g, double lr, Cache cache) {
+concept LayerLike = requires(T& t, Matrix X, const LinearGrads& g, Cache cache, const Cache& const_cache) {
     { t.forward(X) } -> std::same_as<std::pair<Matrix, Cache>>;
-    { t.sgd_step(lr, g) } -> std::same_as<void>;
+    { t.update(g) } -> std::same_as<void>;
     { t.predict(X) } -> std::same_as<Matrix>;
-    { t.backward(X, cache) } -> std::same_as<Matrix>;
-    { t.get_weights_param() } -> std::same_as<Parameter*>;
-    { t.get_biases_param() } -> std::same_as<Parameter*>;
+    { t.backward(X, const_cache) } -> std::same_as<Matrix>;
+    { t.zero_grads() } -> std::same_as<LinearGrads>;
 };
 
 template <class Base, class TObject>
@@ -41,8 +38,7 @@ class CLayerImpl : public Base {
                   "void sgd_step(double, LinearGrads), "
                   "Matrix predict(Matrix), "
                   "Matrix backward(Matrix, Cache), "
-                  "Parameter* get_weights_param(), "
-                  "Parameter* get_biases_param()");
+                  "LinearGrads zero_grads() const");
 
 public:
     template <class U>
@@ -57,21 +53,13 @@ public:
         return object_.predict(std::move(X));
     }
 
-    Matrix backward(Matrix dY, Cache cache) override {
+    std::pair<Matrix, LinearGrads> backward(Matrix dY, const Cache& cache) override {
 
         return object_.backward(std::move(dY), cache);
     }
-
-    Parameter* get_weights_param() override {
-        return object_.get_weights_param();
-    }
-
-    Parameter* get_biases_param() override {
-        return object_.get_biases_param();
-    }
-
-    void sgd_step(double lr, LinearGrads grads) override {
-        object_.sgd_step(lr, std::move(grads));
+    
+    void update(const LinearGrads& grads) override {
+        object_.sgd_step(std::move(grads));
     }
 
 private:
