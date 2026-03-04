@@ -29,6 +29,14 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(eigen)
 
+FetchContent_Declare(
+  proxy
+  GIT_REPOSITORY https://github.com/microsoft/proxy.git
+  GIT_TAG        3.2.1
+  GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(proxy)
+
 # -----------------------------
 # Main target
 # -----------------------------
@@ -41,7 +49,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_SOURCE_DIR}/utils
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Eigen3::Eigen)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+  Eigen3::Eigen
+  msft_proxy
+)
 
 # -----------------------------
 # clang-format only
