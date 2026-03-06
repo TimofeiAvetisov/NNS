@@ -5,7 +5,6 @@ project(NNS LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 include(FetchContent)
 
@@ -19,6 +18,9 @@ set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(EIGEN_BUILD_BTL OFF CACHE BOOL "" FORCE)
 set(EIGEN_BUILD_DOC OFF CACHE BOOL "" FORCE)
 set(EIGEN_BUILD_DEMOS OFF CACHE BOOL "" FORCE)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY         ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_SOURCE_DIR}/bin)
 
 FetchContent_Declare(
   eigen
@@ -30,13 +32,13 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(eigen)
 
 FetchContent_Declare(
-  proxy
-  GIT_REPOSITORY https://github.com/microsoft/proxy.git
-  GIT_TAG        3.2.1
-  GIT_SHALLOW    TRUE
+  msft_proxy4
+  GIT_TAG 4.0.0
+  GIT_REPOSITORY https://github.com/ngcpp/proxy.git
+  GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(proxy)
 
+FetchContent_MakeAvailable(msft_proxy4)
 # -----------------------------
 # Main target
 # -----------------------------
@@ -44,14 +46,16 @@ add_executable(${PROJECT_NAME}
   main.cpp
 )
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_options(${PROJECT_NAME} PRIVATE -O3 -DNDEBUG -march=native)
+endif()
 target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_SOURCE_DIR}/include
-  ${CMAKE_SOURCE_DIR}/utils
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
   Eigen3::Eigen
-  msft_proxy
+  msft_proxy4::proxy
 )
 
 # -----------------------------
@@ -97,3 +101,4 @@ if(EXISTS "${CLANG_FORMAT_EXE}")
     COMMAND_EXPAND_LISTS
   )
 endif()
+

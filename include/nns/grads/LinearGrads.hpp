@@ -13,7 +13,8 @@ struct LinearGrads {
     LinearGrads() : is_empty_(true) {
     }
 
-    LinearGrads(Data dA, Data db = Data()) : dA(std::move(dA)), db(std::move(db)), is_empty_(false) {
+    LinearGrads(Data dA, Data db = Data())
+        : dA(std::move(dA)), db(std::move(db)), is_empty_(false) {
     }
 
     void set_zero() {

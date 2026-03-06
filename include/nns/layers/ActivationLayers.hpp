@@ -1,21 +1,24 @@
 #pragma once
 #include <nns/core/Types.hpp>
 #include <nns/activation/ScalarActivation.hpp>
+#include <nns/activation/ScalarActivation.hpp>
 #include <nns/grads/LinearGrads.hpp>
 #include <nns/core/Cache.hpp>
 #include <stdexcept>
 #include <memory>
 #include <utility>
 
-
 namespace nns {
 class ActivationLayer {
 public:
-    explicit ActivationLayer(AnyScalarActivation activation) : act_(std::move(activation)) {
-        if (!act_.isDefined()) {
+    template <typename Activation>
+    explicit ActivationLayer(Activation&& activation)
+        : act_(make_AnyScalarActivation(std::forward<Activation>(activation))) {
+        if (!act_.has_value()) {
             throw std::invalid_argument("ActivationLayer constructor: activation is not defined");
         }
     }
+
     ActivationLayer(const ActivationLayer&) = delete;
     ActivationLayer& operator=(const ActivationLayer&) = delete;
     ActivationLayer(ActivationLayer&&) = default;
@@ -34,18 +37,14 @@ public:
     std::pair<Matrix, LinearGrads> backward(Matrix dY, const Cache& cache) {
         const Matrix& cache_X = cache.get_X();
         const Matrix& cache_Y = cache.get_Y();
-        if ((dY.rows() != cache_Y.rows()) || (dY.cols() != cache_Y.cols())) {
+        if (dY.rows() != cache_Y.rows() || dY.cols() != cache_Y.cols()) {
             throw std::invalid_argument(
                 "ActivationLayer::backward: dimension mismatch between dY and last_Y_");
         }
 
-        for (int i = 0; i < dY.rows(); ++i) {
-            for (int j = 0; j < dY.cols(); ++j) {
-                double x = cache_X(i, j);
-                double y = cache_Y(i, j);
-                dY(i, j) *= act_->derivative(x, y);
-            }
-        }
+        dY = dY.cwiseProduct(cache_X.binaryExpr(
+            cache_Y, [this](double x, double y) { return act_->derivative(x, y); }));
+
         return {dY, LinearGrads()};
     }
 

@@ -6,9 +6,13 @@
 namespace nns {
 class Cache {
 public:
-    Cache() : cache_X_(), cache_Y_() {}
-    Cache(Data&& cache_X) : cache_X_(std::move(cache_X)), cache_Y_() {}
-    Cache(Data&& cache_X, Data cache_Y) : cache_X_(std::move(cache_X)), cache_Y_(std::move(cache_Y)) {}
+    Cache() : cache_X_(), cache_Y_() {
+    }
+    Cache(Data&& cache_X) : cache_X_(std::move(cache_X)), cache_Y_() {
+    }
+    Cache(Data&& cache_X, Data cache_Y)
+        : cache_X_(std::move(cache_X)), cache_Y_(std::move(cache_Y)) {
+    }
 
     const Matrix& get_X() const {
         return cache_X_.as_matrix();
@@ -31,4 +35,4 @@ private:
     Data cache_X_;
     Data cache_Y_;
 };
-} // namespace nns
+}  // namespace nns

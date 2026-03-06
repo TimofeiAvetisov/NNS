@@ -1,16 +1,20 @@
 #pragma once
-#include <nns/core/Types.hpp>
-#include <nns/layers/Layers.hpp>
-#include <nns/grads/LinearGrads.hpp>
-#include <nns/core/Cache.hpp>
-#include <nns/activation/BuiltinActivations.hpp>
-#include <Random.hpp>
 #include <vector>
 #include <memory>
 #include <initializer_list>
 #include <utility>
 #include <stdexcept>
 #include <variant>
+#include <iostream>
+
+#include <nns/core/Types.hpp>
+#include <nns/layers/Layers.hpp>
+#include <nns/layers/ActivationLayers.hpp>
+#include <nns/layers/LinearLayers.hpp>
+#include <nns/grads/LinearGrads.hpp>
+#include <nns/core/Cache.hpp>
+#include <nns/activation/BuiltinActivations.hpp>
+#include <nns/utils/Random.hpp>
 namespace nns {
 class NeuralNetwork {
 public:
@@ -24,8 +28,7 @@ public:
     template <class... Args>
     explicit NeuralNetwork(Args&&... args) {
         layers_.reserve(sizeof...(Args));
-
-        (push_one(std::forward<Args>(args)), ...);
+        (layers_.push_back(make_AnyLayer(std::forward<Args>(args))), ...);
     }
 
     Matrix predict(Matrix X) {
@@ -60,6 +63,7 @@ public:
             grads.push_back(std::move(grad_));
             dL_dy = std::move(dL_dy_new);
         }
+        reverse(grads.begin(), grads.end());
         return LinearGrads(Data(grads));
     }
 
@@ -79,30 +83,5 @@ public:
 
 private:
     std::vector<AnyLayer> layers_;
-
-    template <class T>
-    void push_one(T&& x) {
-        static_assert(
-            std::is_constructible_v<LinearLayer, T&&> ||
-                std::is_constructible_v<AnyScalarActivation, T&&>,
-            "NeuralNetwork ctor: Must be constructible as LinearLayer or AnyScalarActivation");
-        LayerVariant v{std::forward<T>(x)};
-        push_variant(std::move(v));
-    }
-
-    using LayerVariant = std::variant<LinearLayer, AnyScalarActivation>;
-    void push_variant(LayerVariant&& v) {
-        std::visit(
-            [&](auto&& obj) {
-                using U = std::remove_cvref_t<decltype(obj)>;
-
-                if constexpr (std::is_same_v<U, LinearLayer>) {
-                    layers_.push_back(AnyLayer(std::move(obj)));
-                } else {
-                    layers_.push_back(AnyLayer(ActivationLayer(std::move(obj))));
-                }
-            },
-            std::move(v));
-    }
 };
 }  // namespace nns

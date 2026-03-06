@@ -43,8 +43,7 @@
 *.json
 
 .*
-build/
-build-ninja/
+build*/
 
 !.clang-format
 !.clang-tidy

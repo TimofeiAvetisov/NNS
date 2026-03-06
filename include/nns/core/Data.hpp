@@ -9,9 +9,11 @@
 namespace nns {
 class Data {
 public:
-    Data(std::any data) : data_(std::move(data)) {}
+    Data(std::any data) : data_(std::move(data)) {
+    }
 
-    Data () : data_(std::any{}) {}
+    Data() : data_(std::any{}) {
+    }
 
     bool is_empty() const {
         return data_.type() == typeid(void);
@@ -58,7 +60,7 @@ public:
         as_vector_mutable().setZero();
     }
 
-    const std::any& get_data() const { // currently for vector<Cache> dk yet how to fix
+    const std::any& get_data() const {  // currently for vector<Cache> dk yet how to fix
         return data_;
     }
 
@@ -74,4 +76,4 @@ public:
 private:
     std::any data_;
 };
-} // namespace nns
+}  // namespace nns
