@@ -15,6 +15,9 @@
 #include <nns/core/Cache.hpp>
 #include <nns/activation/BuiltinActivations.hpp>
 #include <nns/utils/Random.hpp>
+#include <nns/optimizer/Optimizers.hpp>
+#include <nns/core/OptCache.hpp>
+
 namespace nns {
 class NeuralNetwork {
 public:
@@ -59,6 +62,7 @@ public:
         grads.reserve(layers_.size());
         for (size_t i = 0; i < layers_.size(); ++i) {
             size_t rev_i = layers_.size() - 1 - i;
+            std::cout << "processing layer: " << rev_i << "\r";
             auto [dL_dy_new, grad_] = layers_[rev_i]->backward(std::move(dL_dy), cache[rev_i]);
             grads.push_back(std::move(grad_));
             dL_dy = std::move(dL_dy_new);
@@ -67,10 +71,11 @@ public:
         return LinearGrads(Data(grads));
     }
 
-    void update(const LinearGrads& grads /*, Optimizer opt, OptCache cache*/) {
+    void update(const LinearGrads& grads, const AnyOptimizer& opt, OptCache& opt_cache) {
         for (size_t i = 0; i < layers_.size(); ++i) {
-            layers_[i]->update(grads[i] /*, opt, cache*/);
+            layers_[i]->update(grads[i], opt, opt_cache);
         }
+        opt->step();
     }
 
     static void reseed_rng(uint32_t seed) {

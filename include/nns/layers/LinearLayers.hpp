@@ -4,6 +4,10 @@
 #include <nns/grads/LinearGrads.hpp>
 #include <nns/core/Cache.hpp>
 #include <nns/utils/Random.hpp>
+#include <nns/core/OptCache.hpp>
+#include <nns/optimizer/Optimizers.hpp>
+#include <nns/core/Data.hpp>
+
 #include <memory>
 #include <stdexcept>
 #include <utility>
@@ -36,16 +40,19 @@ public:
 
     std::pair<Matrix, LinearGrads> backward(Matrix dY, const Cache& cache) {
         LinearGrads grads(Data(std::move(zero_matrix())), Data(std::move(zero_vector())));
-        grads.dA.as_matrix_mutable() = (dY * cache.get_X().transpose()).eval();
-        grads.db.as_vector_mutable() = (dY.rowwise().sum()).eval();
+        const Data& data_x = cache.get_X();
+        const Matrix& cache_X = std::any_cast<const Matrix&>(data_x.get_data());
+        std::any_cast<Matrix&>(grads.get_dA().get_data()) = (dY * cache_X.transpose()).eval();
+        std::any_cast<Vector&>(grads.get_db().get_data()) = (dY.rowwise().sum()).eval();
         return {A_.transpose() * dY, std::move(grads)};
     }
 
-    void update(const LinearGrads& grads /*, Optimizer opt, OptCache opt_cache*/) {
-        // Due to not implemented optimizers
-        const double lr = 0.01;
-        A_ -= lr * grads.dA.as_matrix();
-        b_ -= lr * grads.db.as_vector();
+    void update(const LinearGrads& grads, const AnyOptimizer& opt, OptCache& opt_cache) {  // weights and biases not valid during opt::update_weights
+        Data params(std::make_pair(std::move(A_), std::move(b_)));
+        Data updated_weights = opt->update_weights(std::move(params), grads, opt_cache);
+        auto& [new_A, new_b] = std::any_cast<std::pair<Matrix, Vector>&>(updated_weights.get_data());
+        A_ = std::move(new_A);
+        b_ = std::move(new_b);
     }
 
 private:
@@ -58,7 +65,7 @@ private:
     }
 
     Vector zero_vector() const {
-        return Vector::Zero(static_cast<Index>(A_.size())).eval();
+        return Vector::Zero(static_cast<Index>(A_.rows())).eval();
     }
 };
 }  // namespace nns

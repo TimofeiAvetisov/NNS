@@ -7,6 +7,10 @@
 #include <nns/layers/LinearLayers.hpp>
 #include <nns/layers/ActivationLayers.hpp>
 #include <nns/core/Cache.hpp>
+#include <nns/core/Data.hpp>
+#include <nns/optimizer/Optimizers.hpp>
+#include <nns/core/OptCache.hpp>
+
 
 namespace nns {
 namespace LayerProxy {
@@ -18,7 +22,7 @@ PRO_DEF_MEM_DISPATCH(MemUpdate, update);
 struct Layer : pro::facade_builder ::add_convention<MemForward, std::pair<Matrix, Cache>(Matrix)>::
                    add_convention<MemPredict, Matrix(Matrix)>::add_convention<
                        MemBackward, std::pair<Matrix, LinearGrads>(Matrix, const Cache&)>::
-                       add_convention<MemUpdate, void(const LinearGrads&)>::build {};
+                       add_convention<MemUpdate, void(const LinearGrads&, const AnyOptimizer&, OptCache&)>::build {};
 }  // namespace LayerProxy
 
 using AnyLayer = pro::proxy<LayerProxy::Layer>;

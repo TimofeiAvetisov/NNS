@@ -75,7 +75,7 @@ struct BCEWithLogitsLoss {  // for numerical stability with sigmoid inside the l
     double loss(const Matrix& y_hat, const Matrix& y) const {
         const double n = y_hat.size();
         const Matrix max_zero = y_hat.cwiseMax(0.0);
-        const Matrix log_exp = (max_zero.array() + (-max_zero.array()).exp().log()).matrix();
+        const Matrix log_exp = (1.0 + (-y_hat.array().abs()).exp()).log().matrix();
         return (max_zero - y_hat.cwiseProduct(y) + log_exp).sum() / n;
     }
 

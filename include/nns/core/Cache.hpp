@@ -14,12 +14,20 @@ public:
         : cache_X_(std::move(cache_X)), cache_Y_(std::move(cache_Y)) {
     }
 
-    const Matrix& get_X() const {
-        return cache_X_.as_matrix();
+    const Data& get_X() const {
+        return cache_X_;
     }
 
-    const Matrix& get_Y() const {
-        return cache_Y_.as_matrix();
+    const Data& get_Y() const {
+        return cache_Y_;
+    }
+
+    Data& get_X() {
+        return cache_X_;
+    }
+
+    Data& get_Y() {
+        return cache_Y_;
     }
 
     Cache operator[](size_t index) const {

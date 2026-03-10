@@ -17,11 +17,24 @@ struct LinearGrads {
         : dA(std::move(dA)), db(std::move(db)), is_empty_(false) {
     }
 
-    void set_zero() {
-        dA.set_zero();
-        db.set_zero();
+    bool is_empty() const {
+        return is_empty_;
     }
-    // std::vector<LinearGrads>
+
+    const Data& get_dA() const {
+        return dA;
+    }
+    const Data& get_db() const {
+        return db;
+    }
+
+    Data& get_dA() {
+        return dA;
+    }
+
+    Data& get_db() {
+        return db;
+    }
 
     LinearGrads operator[](size_t index) const {
         try {

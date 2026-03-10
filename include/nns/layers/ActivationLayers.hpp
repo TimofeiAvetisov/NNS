@@ -4,6 +4,10 @@
 #include <nns/activation/ScalarActivation.hpp>
 #include <nns/grads/LinearGrads.hpp>
 #include <nns/core/Cache.hpp>
+#include <nns/core/Data.hpp>
+#include <nns/core/OptCache.hpp>
+#include <nns/optimizer/Optimizers.hpp>
+
 #include <stdexcept>
 #include <memory>
 #include <utility>
@@ -35,8 +39,8 @@ public:
     }
 
     std::pair<Matrix, LinearGrads> backward(Matrix dY, const Cache& cache) {
-        const Matrix& cache_X = cache.get_X();
-        const Matrix& cache_Y = cache.get_Y();
+        const Matrix& cache_X = std::any_cast<const Matrix&>(cache.get_X().get_data());
+        const Matrix& cache_Y = std::any_cast<const Matrix&>(cache.get_Y().get_data());
         if (dY.rows() != cache_Y.rows() || dY.cols() != cache_Y.cols()) {
             throw std::invalid_argument(
                 "ActivationLayer::backward: dimension mismatch between dY and last_Y_");
@@ -44,11 +48,10 @@ public:
 
         dY = dY.cwiseProduct(cache_X.binaryExpr(
             cache_Y, [this](double x, double y) { return act_->derivative(x, y); }));
-
         return {dY, LinearGrads()};
     }
 
-    void update(const LinearGrads& /*, Optimizer opt, OptCache opt_cache*/) {
+    void update(const LinearGrads&, const AnyOptimizer&, OptCache&) {
         // Activation layer has no parameters, so nothing to do here
     }
 

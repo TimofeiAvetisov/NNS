@@ -15,52 +15,35 @@ public:
     Data() : data_(std::any{}) {
     }
 
+    Data(const Data& other) : data_(other.data_) {
+    }
+
+    Data(Data&& other) noexcept : data_(std::move(other.data_)) {
+    }
+
+    Data& operator=(const Data& other) {
+        if (this != &other) {
+            data_ = other.data_;
+        }
+        return *this;
+    }
+
+    Data& operator=(Data&& other) noexcept {
+        if (this != &other) {
+            data_ = std::move(other.data_);
+        }
+        return *this;
+    }
+
     bool is_empty() const {
         return data_.type() == typeid(void);
     }
 
-    const Matrix& as_matrix() const {
-        try {
-            return std::any_cast<const Matrix&>(data_);
-        } catch (const std::bad_any_cast& e) {
-            throw std::runtime_error("Data::as_matrix: data is not a Matrix");
-        }
-        // return std::any_cast<const Matrix&>(data_);
-    }
-
-    const Vector& as_vector() const {
-        try {
-            return std::any_cast<const Vector&>(data_);
-        } catch (const std::bad_any_cast& e) {
-            throw std::runtime_error("Data::as_vector: data is not a Vector");
-        }
-        // return std::any_cast<const Vector&>(data_);
-    }
-
-    Matrix& as_matrix_mutable() {
-        try {
-            return std::any_cast<Matrix&>(data_);
-        } catch (const std::bad_any_cast& e) {
-            throw std::runtime_error("Data::as_matrix_mutable: data is not a Matrix");
-        }
-        // return std::any_cast<Matrix&>(data_);
-    }
-
-    Vector& as_vector_mutable() {
-        try {
-            return std::any_cast<Vector&>(data_);
-        } catch (const std::bad_any_cast& e) {
-            throw std::runtime_error("Data::as_vector_mutable: data is not a Vector");
-        }
-        // return std::any_cast<Vector&>(data_);
-    }
-
-    void set_zero() {
-        as_matrix_mutable().setZero();
-        as_vector_mutable().setZero();
-    }
-
     const std::any& get_data() const {  // currently for vector<Cache> dk yet how to fix
+        return data_;
+    }
+
+    std::any& get_data() {
         return data_;
     }
 
