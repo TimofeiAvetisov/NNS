@@ -7,6 +7,7 @@
 #include <nns/core/OptCache.hpp>
 #include <nns/optimizer/Optimizers.hpp>
 #include <nns/core/Data.hpp>
+#include <nns/core/StrongType.hpp>
 
 #include <memory>
 #include <stdexcept>
@@ -14,8 +15,8 @@
 
 namespace nns {
 
-enum IN : size_t;
-enum OUT : size_t;
+using IN = StrongType<size_t, struct InTag>;
+using OUT = StrongType<size_t, struct OutTag>;
 
 class LinearLayer {
 public:

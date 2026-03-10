@@ -5,17 +5,32 @@
 namespace nns {
 
 class OptCache {
+private:
+    using VecData = std::vector<Data>;
+    VecData data_;
+    bool is_inited_ = false;
 public:
-    OptCache() : data_(Data()) {
+    OptCache() : data_(VecData()) {
     }
 
-    OptCache(Data data) : data_(std::move(data)) {
+    OptCache(VecData&& data) : data_(std::move(data)), is_inited_(true) {
     }
 
-    const Data& get_data() const {
+    const VecData& get_data() const {
         return data_;
     }
-private:
-    Data data_;  // basicly it stores the vector<Data> for optimizer or just one Data, opt knows it anyway.
+
+    VecData& get_data() {
+        return data_;
+    }
+
+    void store(VecData&& data) {
+        data_ = data;
+        is_inited_ = true;
+    }
+
+    bool is_inited() const {
+        return is_inited_;
+    }
 };
 }  // namespace nns
