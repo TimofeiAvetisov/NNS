@@ -5,6 +5,7 @@
 #include <nns/core/Data.hpp>
 #include <nns/learningrates/LearningRates.hpp>
 #include <nns/learningrates/BuiltinLearningRates.hpp>
+#include <nns/core/StrongType.hpp>
 
 // TODO need to rebuild logic, so Optimizer will call the Network by itself(in this way we can implement batch descents, otherwise logic is really hard)
 
@@ -129,21 +130,24 @@ public:
         if (OptCache.is_inited()) {
             A_mass = std::any_cast<Matrix>(OptCache.get_data()[0].get_data());
             A_vel = std::any_cast<Matrix>(OptCache.get_data()[1].get_data());
-            b_mass = std::any_cast<Matrix>(OptCache.get_data()[2].get_data());
-            b_vel = std::any_cast<Matrix>(OptCache.get_data()[3].get_data());
+
+            b_mass = std::any_cast<Vector>(OptCache.get_data()[2].get_data());
+            b_vel = std::any_cast<Vector>(OptCache.get_data()[3].get_data());
         } else {
             A_mass =
                 Matrix::Zero(static_cast<Index>(dA.rows()), static_cast<Index>(dA.cols())).eval();
             A_vel =
                 Matrix::Zero(static_cast<Index>(dA.rows()), static_cast<Index>(dA.cols())).eval();
+
             b_mass = Vector::Zero(static_cast<Index>(db.rows())).eval();
             b_vel = Vector::Zero(static_cast<Index>(db.rows())).eval();
         }
 
         A_mass = beta1_ * A_mass + (1 - beta1_) * dA;
-        A_vel = beta2_ * A_vel + (1 - beta2_) * (dA * dA.transpose());
+        A_vel = beta2_ * A_vel + (1 - beta2_) * dA.array().square().matrix();
+
         b_mass = beta1_ * b_mass + (1 - beta1_) * db;
-        b_vel = beta2_ * b_vel + (1 - beta2_) * (db * db.transpose());
+        b_vel = beta2_ * b_vel + (1 - beta2_) * db.array().square().matrix();
 
         size_t k = iter_ + 1;
         Matrix A_mass_hat = A_mass / (1 - pow(beta1_, k));
@@ -171,7 +175,7 @@ private:
     mutable size_t iter_ = 0;
 };
 
-std::pair<Matrix, Vector> decode_params(Data&& params) {
+inline std::pair<Matrix, Vector> decode_params(Data&& params) {
     return std::any_cast<std::pair<Matrix, Vector>>(params.get_data());
 }
 }  // namespace nns

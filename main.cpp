@@ -30,14 +30,17 @@ int main() {
     nns::MSELoss loss_fn;
     const int epochs = 20000;
     const int print_every = 500;
+    nns::AnyOptimizer opt = nns::make_AnyOptimizer(nns::SGD(nns::ConstatLR()));
 
     for (int epoch = 0; epoch <= epochs; ++epoch) {
         auto [y_hat, cache] = net.forward(X);
         double loss = loss_fn.loss(y_hat, y);
+
         Matrix dL_dy = loss_fn.gradient(y_hat, y);
         auto grads = net.backward(dL_dy, cache);
-        net.update(grads);
-
+        nns::OptCache opt_cache;
+        net.update(grads, opt, opt_cache);
+        opt->step();
         if (epoch % print_every == 0) {
             cout << "epoch " << setw(6) << epoch << "  loss = " << scientific << setprecision(4)
                  << loss << "\n";
@@ -45,7 +48,6 @@ int main() {
     }
     cout << "\nTraining completed.\n";
 
-    // Проверяем на нескольких точках
     cout << "\nCheck:\n";
     cout << setw(10) << "x" << setw(12) << "sin(x)" << setw(12) << "predict" << setw(12)
          << "error\n";

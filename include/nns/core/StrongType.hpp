@@ -6,7 +6,7 @@ template<typename T, typename Tag>
 struct StrongType {
     explicit StrongType(T v) : value_(v) {}
     operator T() const {
-        return value;
+        return value_;
     }
     T value_;
 };
