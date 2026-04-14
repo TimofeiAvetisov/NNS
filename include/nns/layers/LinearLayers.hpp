@@ -22,16 +22,16 @@ public:
                                                              gain);  // rework the rng
     }
 
-    std::pair<Matrix, std::any> forward(Matrix X) {
+    std::pair<Matrix, std::any> forward(Matrix&& X) {
         Matrix Y = A_ * X;
         Y.colwise() += b_;
         return {std::move(Y), Cache{std::move(X)}};
     }
 
-    Matrix predict(Matrix X) const {
-        X = A_ * X;
-        X.colwise() += b_;
-        return X;
+    Matrix predict(const Matrix& X) const {
+        Matrix Y = A_ * X;
+        Y.colwise() += b_;
+        return Y;
     }
 
     std::pair<Matrix, std::any> backward(Matrix&& dY, const std::any& cache) {
@@ -42,15 +42,15 @@ public:
     }
 
     std::any update(std::any&& grads, AnyOptimizer& opt, std::any&& opt_cache) {
-        auto [dA, db] = std::any_cast<std::pair<Matrix, Vector>>(grads);
+        auto [dA, db] = std::any_cast<std::pair<Matrix, Vector>&&>(std::move(grads));
         std::any opt_cache_A, opt_cache_b;
         if (opt_cache.has_value()) {
-            auto p = std::any_cast<std::pair<std::any, std::any>>(opt_cache);
+            auto p = std::any_cast<std::pair<std::any, std::any>&&>(std::move(opt_cache));
             opt_cache_A = p.first;
             opt_cache_b = p.second;
         }
-        std::any opt_cache_A_new = opt->update_weights(A_, std::move(dA), std::move(opt_cache_A));
-        std::any opt_cache_b_new = opt->update_weights(b_, std::move(db), std::move(opt_cache_b));
+        std::any opt_cache_A_new = opt->update_weights(A_, dA, std::move(opt_cache_A));
+        std::any opt_cache_b_new = opt->update_weights(b_, db, std::move(opt_cache_b));
         return std::make_pair(std::move(opt_cache_A_new), std::move(opt_cache_b_new));
     }
 

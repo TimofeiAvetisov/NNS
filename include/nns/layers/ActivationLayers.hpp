@@ -19,14 +19,14 @@ public:
         }
     }
 
-    std::pair<Matrix, std::any> forward(Matrix X) {
+    std::pair<Matrix, std::any> forward(Matrix&& X) {
         Matrix Y = X.unaryExpr([this](double x) { return act_->forward(x); });
         return {std::move(Y), Cache{std::move(X)}};
     }
 
-    Matrix predict(Matrix X) const {
-        X = X.unaryExpr([this](double x) { return act_->forward(x); });
-        return X;
+    Matrix predict(const Matrix& X) const {
+        Matrix Y = X.unaryExpr([this](double x) { return act_->forward(x); });
+        return Y;
     }
 
     std::pair<Matrix, std::any> backward(Matrix&& dY, const std::any& cache) {

@@ -18,8 +18,9 @@ struct LossFunction
 // clang-format on
 
 using AnyLossFunction = pro::proxy<LossProxy::LossFunction>;
+
 template <typename T, typename... Args>
-AnyLossFunction make_AnyLossFunction(Args&&... args) {
+inline AnyLossFunction make_AnyLossFunction(Args&&... args) {
     return pro::make_proxy<LossProxy::LossFunction, T>(T{std::forward<Args>(args)...});
 }
 

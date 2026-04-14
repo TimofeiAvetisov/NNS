@@ -25,14 +25,15 @@ public:
         (layers_.push_back(make_AnyLayer(std::forward<Args>(args))), ...);
     }
 
-    Matrix predict(Matrix X) const {
+    Matrix predict(const Matrix& X) const {
+        Matrix Y;
         for (const auto& layer : layers_) {
-            X = layer->predict(std::move(X));
+            Y = layer->predict(X);
         }
-        return X;
+        return Y;
     }
 
-    std::pair<Matrix, std::any> forward(Matrix X) {
+    std::pair<Matrix, std::any> forward(Matrix&& X) {
         std::vector<std::any> layers_cache;
         layers_cache.reserve(layers_.size());
         for (AnyLayer& layer : layers_) {

@@ -11,57 +11,63 @@ namespace nns {
 /// SGD optimizer
 class SGDOptimizer {
 public:
-    SGDOptimizer() : lr_scheduler_(make_AnyLearningRateScheduler(ConstatLR())) {
+    SGDOptimizer() : lr_scheduler_(make_AnyLearningRateScheduler(ConstantLR())) {
     }
 
     template <typename T>
-    explicit SGDOptimizer(T&& lr_scheduler, double momentum = 0.0)
-        : lr_scheduler_(make_AnyLearningRateScheduler(std::forward<T>(lr_scheduler))),
-          momentum_(momentum) {
+    explicit SGDOptimizer(T&& lr_scheduler)
+        : lr_scheduler_(make_AnyLearningRateScheduler(std::forward<T>(lr_scheduler))){
     }
 
-    std::any update_weights(Matrix& param, Matrix&& grad, std::any&&) {
+    std::any update_weights(Matrix& param, const Matrix& grad, std::any&&) {
         update_any(param, grad);
         return {};
     }
 
-    std::any update_weights(Vector& param, Vector&& grad, std::any&&) {
+    std::any update_weights(Vector& param, const Vector& grad, std::any&&) {
         update_any(param, grad);
         return {};
     }
 
-    void step() {
-        ++iter_;
+    void iter_step() {
+        lr_scheduler_->iter_step();
     }
 
 private:
     template <typename DataType>
-    void update_any(DataType param, DataType grad) {
+    void update_any(DataType& param, const DataType& grad) {
         const double lr = lr_scheduler_->get_lr(iter_);
         param -= lr * grad;
     }
 
     AnyLearningRateScheduler lr_scheduler_;
-    double momentum_ = 0.0;
-    size_t iter_ = 0;
 };
+
+
+struct Beta1Tag{};
+struct Beta2Tag{};
+struct EpsTag{};
+
+using Beta1 = StrongType<Beta1Tag>;
+using Beta2 = StrongType<Beta2Tag>;
+using Eps = StrongType<EpsTag>;
 
 /// Adam optimizer.
 class AdamOptimizer {
 public:
-    AdamOptimizer() : lr_scheduler_(make_AnyLearningRateScheduler(ConstatLR(0.001))) {
+    AdamOptimizer() : lr_scheduler_(make_AnyLearningRateScheduler(ConstantLR(LR{0.001}))) {
     }
 
     template <typename T>
-    explicit AdamOptimizer(T&& lr_scheduler, double beta1 = 0.9, double beta2 = 0.999,
-                           double eps = 1e-8)
+    explicit AdamOptimizer(T&& lr_scheduler, Beta1 beta1 = 0.9, Beta2 beta2 = 0.999,
+                           Eps eps = 1e-8)
         : lr_scheduler_(make_AnyLearningRateScheduler(std::forward<T>(lr_scheduler))),
           beta1_(beta1),
           beta2_(beta2),
           eps_(eps) {
     }
 
-    std::any update_weights(Matrix& param, Matrix&& grad, std::any&& opt_cache) {
+    std::any update_weights(Matrix& param, const Matrix& grad, std::any&& opt_cache) {
         Cache<Matrix> cache;
         if (!opt_cache.has_value()) {
             cache.m = Matrix::Zero(grad.rows(), grad.cols());
@@ -73,7 +79,7 @@ public:
         return cache;
     }
 
-    std::any update_weights(Vector& param, Vector&& grad, std::any&& opt_cache) {
+    std::any update_weights(Vector& param, const Vector& grad, std::any&& opt_cache) {
         Cache<Vector> cache;
         if (!opt_cache.has_value()) {
             cache.m = Vector::Zero(grad.size());
@@ -85,8 +91,8 @@ public:
         return cache;
     }
 
-    void step() {
-        ++iter_;
+    void iter_step() {
+        lr_scheduler_->iter_step();
     }
 
 private:
@@ -114,7 +120,6 @@ private:
     double beta1_ = 0.9;
     double beta2_ = 0.999;
     double eps_ = 1e-8;
-    size_t iter_ = 0;
 };
 
 }  // namespace nns
