@@ -1,15 +1,14 @@
 #pragma once
 
-#include <nns/core/Types.hpp>
-#include <nns/utils/Random.hpp>
-#include <nns/optimizer/AnyOptimizer.hpp>
-
 #include <memory>
 #include <stdexcept>
 #include <utility>
 
-namespace nns {
+#include <nns/core/Types.hpp>
+#include <nns/optimizer/AnyOptimizer.hpp>
+#include <nns/utils/Random.hpp>
 
+namespace nns {
 enum In : Index;
 enum Out : Index;
 

@@ -1,20 +1,20 @@
 #pragma once
-#include <vector>
-#include <memory>
-#include <initializer_list>
-#include <utility>
-#include <stdexcept>
-#include <variant>
-#include <iostream>
 #include <cassert>
+#include <initializer_list>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <utility>
+#include <variant>
+#include <vector>
 
+#include <nns/activation/BuiltinActivations.hpp>
 #include <nns/core/Types.hpp>
 #include <nns/layers/ActivationLayers.hpp>
-#include <nns/layers/LinearLayers.hpp>
-#include <nns/activation/BuiltinActivations.hpp>
-#include <nns/utils/Random.hpp>
-#include <nns/optimizer/AnyOptimizer.hpp>
 #include <nns/layers/AnyLayer.hpp>
+#include <nns/layers/LinearLayers.hpp>
+#include <nns/optimizer/AnyOptimizer.hpp>
+#include <nns/utils/Random.hpp>
 
 namespace nns {
 class NeuralNetwork {

@@ -1,14 +1,13 @@
 #pragma once
+#include <any>
+#include <cmath>
+#include <unordered_map>
+
 #include <nns/core/Types.hpp>
 #include <nns/learningrates/AnyLearningRate.hpp>
 #include <nns/learningrates/BuiltinLearningRates.hpp>
 
-#include <cmath>
-#include <unordered_map>
-#include <any>
-
 namespace nns {
-
 /// SGD optimizer
 class SGDOptimizer {
 public:

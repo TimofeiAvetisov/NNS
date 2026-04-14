@@ -1,7 +1,9 @@
 #pragma once
 
-#include <nns/core/Types.hpp>
 #include <stdexcept>
+
+#include <nns/core/Types.hpp>
+
 namespace nns {
 struct MSELoss {
     double loss(const Matrix& y_hat, const Matrix& y) const {

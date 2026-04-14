@@ -1,11 +1,13 @@
 #pragma once
-#include <nns/core/Types.hpp>
-#include <Eigen/Dense>
+#include <cmath>
 #include <cstdint>
+#include <iostream>
 #include <random>
 #include <stdexcept>
-#include <iostream>
-#include <cmath>
+
+#include <Eigen/Dense>
+
+#include <nns/core/Types.hpp>
 namespace nns {
 enum class InitScheme { Normal, XavierNormal, HeNormal };
 

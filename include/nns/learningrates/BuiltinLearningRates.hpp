@@ -1,6 +1,6 @@
 #pragma once
-#include <cstddef>
 #include <cmath>
+#include <cstddef>
 
 namespace nns {
 class ConstatLR {

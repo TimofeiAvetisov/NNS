@@ -1,12 +1,11 @@
 #pragma once
 
+#include <proxy/proxy.h>
+
 #include <nns/core/Types.hpp>
 #include <nns/optimizer/BuiltinOptimizers.hpp>
 
-#include <proxy/proxy.h>
-
 namespace nns {
-
 namespace OptimizerProxy {
 PRO_DEF_MEM_DISPATCH(MemUpdate, update_weights);
 PRO_DEF_MEM_DISPATCH(MemStep, step);

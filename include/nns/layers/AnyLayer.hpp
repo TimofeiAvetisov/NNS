@@ -1,13 +1,13 @@
 #pragma once
 
+#include <any>
+
 #include <proxy/proxy.h>
 
 #include <nns/core/Types.hpp>
-#include <nns/layers/LinearLayers.hpp>
 #include <nns/layers/ActivationLayers.hpp>
+#include <nns/layers/LinearLayers.hpp>
 #include <nns/optimizer/AnyOptimizer.hpp>
-
-#include <any>
 
 namespace nns {
 namespace LayerProxy {

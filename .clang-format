@@ -7,5 +7,17 @@ AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 DerivePointerAlignment: true
 KeepEmptyLinesAtTheStartOfBlocks: true
-SortIncludes: false
 InsertNewlineAtEOF: true
+
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+
+IncludeCategories:
+  - Regex: '^<[a-z_]+>'
+    Priority: 1
+  - Regex: '^<nns/.*>'
+    Priority: 3
+  - Regex: '^<.*>'
+    Priority: 2
+MaxEmptyLinesToKeep: 1
+EmptyLineBeforeAccessModifier: Always

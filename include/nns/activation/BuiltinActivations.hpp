@@ -1,8 +1,10 @@
 #pragma once
 
-#include <nns/activation/ScalarActivation.hpp>
-#include <functional>
 #include <cmath>
+#include <functional>
+
+#include <nns/activation/AnyScalarActivation.hpp>
+
 namespace nns {
 struct ReLU {
     double forward(double x) const {

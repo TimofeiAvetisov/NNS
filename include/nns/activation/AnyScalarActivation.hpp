@@ -1,5 +1,6 @@
 #pragma once
 #include <proxy/proxy.h>
+
 #include <nns/core/Types.hpp>
 
 namespace nns {

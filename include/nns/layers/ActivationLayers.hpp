@@ -1,13 +1,12 @@
 #pragma once
-#include <nns/core/Types.hpp>
-#include <nns/activation/ScalarActivation.hpp>
-#include <nns/activation/ScalarActivation.hpp>
-#include <nns/optimizer/AnyOptimizer.hpp>
-
-#include <stdexcept>
-#include <memory>
-#include <utility>
 #include <any>
+#include <memory>
+#include <stdexcept>
+#include <utility>
+
+#include <nns/activation/AnyScalarActivation.hpp>
+#include <nns/core/Types.hpp>
+#include <nns/optimizer/AnyOptimizer.hpp>
 
 namespace nns {
 class ActivationLayer {
