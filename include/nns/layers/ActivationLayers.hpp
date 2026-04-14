@@ -36,8 +36,9 @@ public:
         return {dY, {}};
     }
 
-    void update(std::any&&, AnyOptimizer&, std::any&&) {
+    std::any update(std::any&&, AnyOptimizer&, std::any&&) {
         // Activation layer has no parameters, so nothing to do here
+        return {};
     }
 
 private:

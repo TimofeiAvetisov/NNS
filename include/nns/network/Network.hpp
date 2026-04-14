@@ -59,7 +59,7 @@ public:
         }
         reverse(grads.begin(), grads.end());
 
-        return std::make_pair(std::move(dL_dy), std::move(grads));
+        return std::make_pair(std::move(dL_dy), std::any(std::move(grads)));
     }
 
     std::any update(std::any&& layers_gradients, AnyOptimizer& opt, std::any&& opt_cache) {

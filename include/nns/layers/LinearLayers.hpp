@@ -37,13 +37,18 @@ public:
     std::pair<Matrix, std::any> backward(Matrix&& dY, const std::any& cache) {
         const Matrix& cache_X = std::any_cast<const Cache&>(cache).X_;
         Matrix dA = (dY * cache_X.transpose()).eval();
-        Matrix db = (dY.rowwise().sum()).eval();
-        return {A_.transpose() * dY, std::make_pair(std::move(dA), std::move(db))};
+        Vector db = (dY.rowwise().sum()).eval();
+        return {A_.transpose() * dY, std::any(std::make_pair(std::move(dA), std::move(db)))};
     }
 
     std::any update(std::any&& grads, AnyOptimizer& opt, std::any&& opt_cache) {
         auto [dA, db] = std::any_cast<std::pair<Matrix, Vector>>(grads);
-        auto [opt_cache_A, opt_cache_b] = std::any_cast<std::pair<std::any, std::any>>(opt_cache);
+        std::any opt_cache_A, opt_cache_b;
+        if (opt_cache.has_value()) {
+            auto p = std::any_cast<std::pair<std::any, std::any>>(opt_cache);
+            opt_cache_A = p.first;
+            opt_cache_b = p.second;
+        }
         std::any opt_cache_A_new = opt->update_weights(A_, std::move(dA), std::move(opt_cache_A));
         std::any opt_cache_b_new = opt->update_weights(b_, std::move(db), std::move(opt_cache_b));
         return std::make_pair(std::move(opt_cache_A_new), std::move(opt_cache_b_new));
