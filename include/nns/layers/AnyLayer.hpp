@@ -3,14 +3,11 @@
 #include <proxy/proxy.h>
 
 #include <nns/core/Types.hpp>
-#include <nns/grads/LinearGrads.hpp>
 #include <nns/layers/LinearLayers.hpp>
 #include <nns/layers/ActivationLayers.hpp>
-#include <nns/core/Cache.hpp>
-#include <nns/core/Data.hpp>
-#include <nns/optimizer/Optimizers.hpp>
-#include <nns/core/OptCache.hpp>
+#include <nns/optimizer/AnyOptimizer.hpp>
 
+#include <any>
 
 namespace nns {
 namespace LayerProxy {
@@ -19,11 +16,15 @@ PRO_DEF_MEM_DISPATCH(MemPredict, predict);
 PRO_DEF_MEM_DISPATCH(MemBackward, backward);
 PRO_DEF_MEM_DISPATCH(MemUpdate, update);
 
-struct Layer : pro::facade_builder ::add_convention<MemForward, std::pair<Matrix, Cache>(Matrix)>::
-                   add_convention<MemPredict, Matrix(Matrix)>::add_convention<
-                       MemBackward, std::pair<Matrix, LinearGrads>(Matrix, const Cache&)>::
-                       add_convention<MemUpdate, void(const LinearGrads&, const AnyOptimizer&, OptCache&)>::build {};
+// clang-format off
+struct Layer
+    : pro::facade_builder
+    ::add_convention<MemForward, std::pair<Matrix, std::any>(Matrix)>
+    ::add_convention<MemPredict, Matrix(Matrix) const>
+    ::add_convention<MemBackward, std::pair<Matrix, std::any>(Matrix, const std::any&)>
+    ::add_convention<MemUpdate, std::any(std::any&&, AnyOptimizer&, std::any&&)>::build {};
 }  // namespace LayerProxy
+// clang-format on
 
 using AnyLayer = pro::proxy<LayerProxy::Layer>;
 

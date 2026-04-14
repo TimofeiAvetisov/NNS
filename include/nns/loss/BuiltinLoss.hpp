@@ -3,9 +3,6 @@
 #include <nns/core/Types.hpp>
 #include <stdexcept>
 namespace nns {
-// Basicly should be like ActivationFunction i guess
-enum class LossType { MSE };
-
 struct MSELoss {
     double loss(const Matrix& y_hat, const Matrix& y) const {
         const double n = static_cast<double>(y_hat.size());
@@ -13,8 +10,7 @@ struct MSELoss {
     }
 
     Matrix gradient(const Matrix& y_hat, const Matrix& y) const {
-        const double n = static_cast<double>(y_hat.size());
-        return (2.0 / n) * (y_hat - y);
+        return (2.0 / y_hat.size()) * (y_hat - y);
     }
 };
 
@@ -35,8 +31,8 @@ struct HuberLoss {
 
     double loss(const Matrix& y_hat, const Matrix& y) const {
         const double n = y_hat.size();
-        const Matrix diff = y_hat - y;
-        const Matrix abs_diff = diff.cwiseAbs();
+        auto diff = y_hat - y;
+        auto abs_diff = diff.cwiseAbs();
         const Matrix loss =
             (abs_diff.array() <= delta)
                 .select(0.5 * diff.array().square(), delta * (abs_diff.array() - 0.5 * delta));

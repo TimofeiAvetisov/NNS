@@ -2,15 +2,12 @@
 #include <nns/core/Types.hpp>
 #include <nns/activation/ScalarActivation.hpp>
 #include <nns/activation/ScalarActivation.hpp>
-#include <nns/grads/LinearGrads.hpp>
-#include <nns/core/Cache.hpp>
-#include <nns/core/Data.hpp>
-#include <nns/core/OptCache.hpp>
-#include <nns/optimizer/Optimizers.hpp>
+#include <nns/optimizer/AnyOptimizer.hpp>
 
 #include <stdexcept>
 #include <memory>
 #include <utility>
+#include <any>
 
 namespace nns {
 class ActivationLayer {
@@ -23,43 +20,32 @@ public:
         }
     }
 
-    ActivationLayer(const ActivationLayer&) = delete;
-    ActivationLayer& operator=(const ActivationLayer&) = delete;
-    ActivationLayer(ActivationLayer&&) = default;
-    ActivationLayer& operator=(ActivationLayer&&) = default;
-
-    std::pair<Matrix, Cache> forward(Matrix X) {
+    std::pair<Matrix, std::any> forward(Matrix X) {
         Matrix Y = X.unaryExpr([this](double x) { return act_->forward(x); });
-        return {Y, Cache(Data(std::move(X)), Data(Y))};
+        return {std::move(Y), Cache{std::move(X)}};
     }
 
-    Matrix predict(Matrix X) {
+    Matrix predict(Matrix X) const {
         X = X.unaryExpr([this](double x) { return act_->forward(x); });
         return X;
     }
 
-    std::pair<Matrix, LinearGrads> backward(Matrix dY, const Cache& cache) {
-        const Matrix& cache_X = std::any_cast<const Matrix&>(cache.get_X().get_data());
-        const Matrix& cache_Y = std::any_cast<const Matrix&>(cache.get_Y().get_data());
-        if (dY.rows() != cache_Y.rows() || dY.cols() != cache_Y.cols()) {
-            throw std::invalid_argument(
-                "ActivationLayer::backward: dimension mismatch between dY and last_Y_");
-        }
-
-        dY = dY.cwiseProduct(cache_X.binaryExpr(
-            cache_Y, [this](double x, double y) { return act_->derivative(x, y); }));
-        return {dY, LinearGrads()};
+    std::pair<Matrix, std::any> backward(Matrix&& dY, const std::any& cache) {
+        const Matrix& cache_X = std::any_cast<const Cache&>(cache).X_;
+        dY = dY.binaryExpr(cache_X,
+                           [this](double dy, double x) { return dy * act_->derivative(x); });
+        return {dY, {}};
     }
 
-    void update(const LinearGrads&, const AnyOptimizer&, OptCache&) {
+    void update(std::any&&, AnyOptimizer&, std::any&&) {
         // Activation layer has no parameters, so nothing to do here
     }
 
-    LinearGrads zero_grads() const {
-        return LinearGrads();
-    }
-
 private:
+    struct Cache {
+        Matrix X_;
+    };
+
     AnyScalarActivation act_;
 };
 }  // namespace nns

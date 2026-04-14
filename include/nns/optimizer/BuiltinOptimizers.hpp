@@ -1,48 +1,121 @@
 #pragma once
-#include <nns/core/OptCache.hpp>
 #include <nns/core/Types.hpp>
-#include <nns/grads/LinearGrads.hpp>
-#include <nns/core/Data.hpp>
-#include <nns/learningrates/LearningRates.hpp>
+#include <nns/learningrates/AnyLearningRate.hpp>
 #include <nns/learningrates/BuiltinLearningRates.hpp>
 
+#include <cmath>
+#include <unordered_map>
+#include <any>
+
 namespace nns {
+
+/// SGD optimizer
 class SGDOptimizer {
 public:
-    SGDOptimizer() : lr_scheduler_(make_AnyLearningRateScheduler(ConstatLR())) {};
-
-    template<typename T>
-    SGDOptimizer(T&& lr_scheduler) : lr_scheduler_(make_AnyLearningRateScheduler(std::forward<T>(lr_scheduler))) {}
-
-    Data update_weights(Data params, const LinearGrads& grads, OptCache& /*not used*/) const {  // basicly need to move Params into this method and then store the updated params
-        if (grads.is_empty() || params.is_empty()) {
-            return params;
-        }
-        auto [A, b] = std::any_cast<std::pair<Matrix, Vector>&>(params.get_data());
-        const Matrix& dA = std::any_cast<const Matrix&>(grads.get_dA().get_data());
-        const Vector& db = std::any_cast<const Vector&>(grads.get_db().get_data());
-        double lr = lr_scheduler_->get_lr(iter_);
-        A -= lr * dA;
-        b -= lr * db;
-        return Data(std::make_pair(A, b));
+    SGDOptimizer() : lr_scheduler_(make_AnyLearningRateScheduler(ConstatLR())) {
     }
 
-    void step() const {
+    template <typename T>
+    explicit SGDOptimizer(T&& lr_scheduler, double momentum = 0.0)
+        : lr_scheduler_(make_AnyLearningRateScheduler(std::forward<T>(lr_scheduler))),
+          momentum_(momentum) {
+    }
+
+    std::any update_weights(Matrix& param, Matrix&& grad, std::any&&) {
+        update_any(param, grad);
+        return {};
+    }
+
+    std::any update_weights(Vector& param, Vector&& grad, std::any&&) {
+        update_any(param, grad);
+        return {};
+    }
+
+    void step() {
         ++iter_;
     }
 
 private:
-    // const double lr = 0.01;
+    template <typename DataType>
+    void update_any(DataType param, DataType grad) {
+        const double lr = lr_scheduler_->get_lr(iter_);
+        param -= lr * grad;
+    }
+
     AnyLearningRateScheduler lr_scheduler_;
-    mutable size_t iter_ = 0;
+    double momentum_ = 0.0;
+    size_t iter_ = 0;
 };
 
-class GOpt {
+/// Adam optimizer.
+class AdamOptimizer {
 public:
-    Data update_weights(Data params, const LinearGrads& grads, OptCache& /*not used*/) const {
-    return params;
+    AdamOptimizer() : lr_scheduler_(make_AnyLearningRateScheduler(ConstatLR(0.001))) {
     }
-    void step() const {
+
+    template <typename T>
+    explicit AdamOptimizer(T&& lr_scheduler, double beta1 = 0.9, double beta2 = 0.999,
+                           double eps = 1e-8)
+        : lr_scheduler_(make_AnyLearningRateScheduler(std::forward<T>(lr_scheduler))),
+          beta1_(beta1),
+          beta2_(beta2),
+          eps_(eps) {
     }
+
+    std::any update_weights(Matrix& param, Matrix&& grad, std::any&& opt_cache) {
+        Cache<Matrix> cache;
+        if (!opt_cache.has_value()) {
+            cache.m = Matrix::Zero(grad.rows(), grad.cols());
+            cache.v = Matrix::Zero(grad.rows(), grad.cols());
+        } else {
+            cache = std::any_cast<Cache<Matrix>&&>(std::move(opt_cache));
+        }
+        adam_step(param, grad, cache);
+        return cache;
+    }
+
+    std::any update_weights(Vector& param, Vector&& grad, std::any&& opt_cache) {
+        Cache<Vector> cache;
+        if (!opt_cache.has_value()) {
+            cache.m = Vector::Zero(grad.size());
+            cache.v = Vector::Zero(grad.size());
+        } else {
+            cache = std::any_cast<Cache<Vector>&&>(std::move(opt_cache));
+        }
+        adam_step(param, grad, cache);
+        return cache;
+    }
+
+    void step() {
+        ++iter_;
+    }
+
+private:
+    template <typename T>
+    struct Cache {
+        T m;
+        T v;
+    };
+
+    template <typename T>
+    void adam_step(T& param, const T& grad, Cache<T>& cache) {
+        const double lr = lr_scheduler_->get_lr(iter_);
+        const double t = static_cast<double>(iter_ + 1);
+
+        cache.m = beta1_ * cache.m + (1.0 - beta1_) * grad;
+        cache.v = beta2_ * cache.v + (1.0 - beta2_) * grad.cwiseProduct(grad);
+
+        const T m_hat = cache.m / (1.0 - std::pow(beta1_, t));
+        const T v_hat = cache.v / (1.0 - std::pow(beta2_, t));
+
+        param.array() -= lr * m_hat.array() / (v_hat.array().sqrt() + eps_);
+    }
+
+    AnyLearningRateScheduler lr_scheduler_;
+    double beta1_ = 0.9;
+    double beta2_ = 0.999;
+    double eps_ = 1e-8;
+    size_t iter_ = 0;
 };
-}
+
+}  // namespace nns

@@ -52,3 +52,6 @@ bin/
 files.txt
 tidy-output.txt
 reminder.txt
+
+main.cpp
+cmake/

@@ -7,11 +7,14 @@ namespace ScalarActivationProxy {
 PRO_DEF_MEM_DISPATCH(MemDerivative, derivative);
 PRO_DEF_MEM_DISPATCH(MemForward, forward);
 
+// clang-format off
 struct ScalarActivation
-    : pro::facade_builder ::add_convention<MemForward, double(double) const>::add_convention<
-          MemDerivative, double(double, double) const>::build {};
-
+    : pro::facade_builder 
+    ::add_convention<MemForward, double(double) const>
+    ::add_convention<MemDerivative, double(double) const>::build {};
 }  // namespace ScalarActivationProxy
+// clang-format on
+
 using AnyScalarActivation = pro::proxy<ScalarActivationProxy::ScalarActivation>;
 
 template <typename T>
