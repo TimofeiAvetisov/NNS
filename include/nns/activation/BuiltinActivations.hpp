@@ -1,4 +1,5 @@
 #pragma once
+
 #include <nns/activation/ScalarActivation.hpp>
 #include <functional>
 #include <cmath>
@@ -7,7 +8,7 @@ struct ReLU {
     double forward(double x) const {
         return x > 0.0 ? x : 0.0;
     }
-    double derivative(double x, double /*y*/) const {
+    double derivative(double x) const {
         return x > 0.0 ? 1.0 : 0.0;
     }
 };
@@ -17,7 +18,8 @@ struct Sigmoid {
         return 1.0 / (1.0 + std::exp(-x));
     }
 
-    double derivative(double /*x*/, double y) const {
+    double derivative(double x) const {
+        double y = forward(x);
         return y * (1.0 - y);
     }
 };
@@ -27,7 +29,8 @@ struct Tanh {
         return std::tanh(x);
     }
 
-    double derivative(double x, double y) const {
+    double derivative(double x) const {
+        double y = forward(x);
         return 1.0 - y * y;
     }
 };

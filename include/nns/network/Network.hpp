@@ -6,76 +6,74 @@
 #include <stdexcept>
 #include <variant>
 #include <iostream>
+#include <cassert>
 
 #include <nns/core/Types.hpp>
-#include <nns/layers/Layers.hpp>
 #include <nns/layers/ActivationLayers.hpp>
 #include <nns/layers/LinearLayers.hpp>
-#include <nns/grads/LinearGrads.hpp>
-#include <nns/core/Cache.hpp>
 #include <nns/activation/BuiltinActivations.hpp>
 #include <nns/utils/Random.hpp>
-#include <nns/optimizer/Optimizers.hpp>
-#include <nns/core/OptCache.hpp>
+#include <nns/optimizer/AnyOptimizer.hpp>
+#include <nns/layers/AnyLayer.hpp>
 
 namespace nns {
 class NeuralNetwork {
 public:
-    // move-only
-    NeuralNetwork() = default;
-    NeuralNetwork(const NeuralNetwork&) = delete;
-    NeuralNetwork& operator=(const NeuralNetwork&) = delete;
-    NeuralNetwork(NeuralNetwork&&) = default;
-    NeuralNetwork& operator=(NeuralNetwork&&) = default;
-
     template <class... Args>
     explicit NeuralNetwork(Args&&... args) {
         layers_.reserve(sizeof...(Args));
         (layers_.push_back(make_AnyLayer(std::forward<Args>(args))), ...);
     }
 
-    Matrix predict(Matrix X) {
-        for (size_t i = 0; i < layers_.size(); ++i) {
-            X = layers_[i]->predict(std::move(X));
+    Matrix predict(Matrix X) const {
+        for (const auto& layer : layers_) {
+            X = layer->predict(std::move(X));
         }
         return X;
     }
 
-    std::pair<Matrix, Cache> forward(Matrix X) {
-        std::vector<Cache> caches_X;
-        caches_X.reserve(layers_.size());
-        for (size_t i = 0; i < layers_.size(); ++i) {
-            auto [Y, cache_] = std::move(layers_[i]->forward(std::move(X)));
-            caches_X.push_back(std::move(cache_));
+    std::pair<Matrix, std::any> forward(Matrix X) {
+        std::vector<std::any> layers_cache;
+        layers_cache.reserve(layers_.size());
+        for (AnyLayer& layer : layers_) {
+            auto [Y, cache] = layer->forward(std::move(X));
             X = std::move(Y);
+            layers_cache.push_back(std::move(cache));
         }
-        Cache cache_data(Data(std::move(caches_X)));
-        return {X, cache_data};
+        return std::make_pair(std::move(X), std::move(layers_cache));
     }
 
-    LinearGrads backward(Matrix& dL_dy, const Cache& cache) {
-        if (layers_.empty()) {
-            throw std::runtime_error("NeuralNetwork::backward: no layers in the network");
-        }
-
-        std::vector<LinearGrads> grads;
+    std::pair<Matrix, std::any> backward(Matrix&& dL_dy, const std::any& layers_cache) {
+        std::vector<std::any> grads;
         grads.reserve(layers_.size());
+    
+        assert(layers_cache.has_value() && "Empty cache passed in Newtorwk::backward");
+    
+        const std::vector<std::any>& cache = std::any_cast<const std::vector<std::any>&>(layers_cache);
         for (size_t i = 0; i < layers_.size(); ++i) {
             size_t rev_i = layers_.size() - 1 - i;
-            std::cout << "processing layer: " << rev_i << "\r";
-            auto [dL_dy_new, grad_] = layers_[rev_i]->backward(std::move(dL_dy), cache[rev_i]);
-            grads.push_back(std::move(grad_));
+            auto [dL_dy_new, grad] = layers_[rev_i]->backward(std::move(dL_dy), cache[rev_i]);
+            grads.push_back(std::move(grad));
             dL_dy = std::move(dL_dy_new);
         }
         reverse(grads.begin(), grads.end());
-        return LinearGrads(Data(grads));
+
+        return std::make_pair(std::move(dL_dy), std::move(grads));
     }
 
-    void update(const LinearGrads& grads, const AnyOptimizer& opt, OptCache& opt_cache) {
-        for (size_t i = 0; i < layers_.size(); ++i) {
-            layers_[i]->update(grads[i], opt, opt_cache);
+    std::any update(std::any&& layers_gradients, AnyOptimizer& opt, std::any&& opt_cache) {
+        std::vector<std::any> grads = std::any_cast<std::vector<std::any>&&>(std::move(layers_gradients));
+        std::vector<std::any> cache;
+        if (opt_cache.has_value()) {
+            cache = std::any_cast<std::vector<std::any>&&>(std::move(opt_cache));
+        } else {
+            cache.assign(layers_.size(), std::any{});
         }
-        opt->step();
+
+        for (size_t i = 0; i < layers_.size(); ++i) {
+            cache[i] = layers_[i]->update(std::move(grads[i]), opt, std::move(cache[i]));
+        }
+        return cache;
     }
 
     static void reseed_rng(uint32_t seed) {

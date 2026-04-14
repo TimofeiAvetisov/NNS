@@ -1,5 +1,4 @@
 #pragma once
-// need size_t
 #include <cstddef>
 #include <cmath>
 
