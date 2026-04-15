@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <cassert>
 #include <initializer_list>
 #include <iostream>
@@ -25,9 +26,9 @@ public:
     }
 
     Matrix predict(const Matrix& X) const {
-        Matrix Y;
+        Matrix Y = X;
         for (const auto& layer : layers_) {
-            Y = layer->predict(X);
+            Y = layer->predict(Y);
         }
         return Y;
     }
@@ -57,7 +58,7 @@ public:
             grads.push_back(std::move(grad));
             dL_dy = std::move(dL_dy_new);
         }
-        reverse(grads.begin(), grads.end());
+        std::reverse(grads.begin(), grads.end());
 
         return std::make_pair(std::move(dL_dy), std::any(std::move(grads)));
     }

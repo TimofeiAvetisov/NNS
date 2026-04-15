@@ -1,6 +1,11 @@
 #pragma once
 
+#include <cstddef>
+#include <utility>
+
 #include <proxy/proxy.h>
+
+#include <nns/core/Types.hpp>
 
 namespace nns {
 namespace LearningRatesProxy {
@@ -11,7 +16,7 @@ PRO_DEF_MEM_DISPATCH(MemGetIter, get_iter);
 // clang-format off
 struct LearningRateScheduler
     : pro::facade_builder
-    ::add_convention<MemGetLR, double()>
+    ::add_convention<MemGetLR, Scalar()>
     ::add_convention<MemIterStep, void()>
     ::add_convention<MemGetIter, size_t() const>::build {};
 }  // namespace LearningRatesProxy

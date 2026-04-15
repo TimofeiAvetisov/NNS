@@ -1,9 +1,10 @@
 #pragma once
 
+#include <any>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <utility>
-#include <optional>
 
 #include <nns/core/Types.hpp>
 #include <nns/optimizer/AnyOptimizer.hpp>
@@ -16,7 +17,8 @@ enum Out : Index;
 class LinearLayer {
 public:
     LinearLayer() = default;
-    LinearLayer(In in_dim, Out out_dim, RandomGenerator& rng, Distribution dist = Distribution::Normal, Gain gain = Gain{1.0})
+    LinearLayer(In in_dim, Out out_dim, RandomGenerator& rng,
+                Distribution dist = Distribution::Normal, Gain gain = Gain{1.0})
         : b_(Vector::Zero(out_dim)) {
         A_ = Matrix{out_dim, in_dim};
         rng.init_matrix(A_, dist, gain);

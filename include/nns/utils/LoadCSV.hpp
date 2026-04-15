@@ -1,21 +1,19 @@
 #pragma once
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
 #include <nns/core/Types.hpp>
 
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <stdexcept>
-#include <utility>
-#include <unordered_set>
-#include <iostream>
-
 namespace nns {
-inline std::pair<Matrix, Matrix> load_csv(
-        const std::string& path,
-        const std::unordered_set<size_t>& target_cols,
-        char delimiter = ',',
-        bool has_header = false) {
+inline std::pair<Matrix, Matrix> load_csv(const std::string& path,
+                                          const std::unordered_set<size_t>& target_cols,
+                                          char delimiter = ',', bool has_header = false) {
 
     std::ifstream file(path);
     if (!file.is_open()) {
@@ -27,18 +25,17 @@ inline std::pair<Matrix, Matrix> load_csv(
         std::getline(file, line);
     }
 
-    std::vector<std::vector<double>> x_rows, y_rows;
+    std::vector<std::vector<Scalar>> x_rows, y_rows;
     while (std::getline(file, line)) {
         if (line.empty()) {
             continue;
         }
         std::istringstream ss(line);
         std::string token;
-        std::vector<double> x_row, y_row;
+        std::vector<Scalar> x_row, y_row;
         size_t col = 0;
         while (std::getline(ss, token, delimiter)) {
-            std::cout << token << '\n';
-            double val = std::stod(token);
+            Scalar val = static_cast<Scalar>(std::stod(token));
             if (target_cols.count(col)) {
                 y_row.push_back(val);
             } else {
@@ -61,8 +58,10 @@ inline std::pair<Matrix, Matrix> load_csv(
     Matrix X(x_dim, n);
     Matrix Y(y_dim, n);
     for (Index i = 0; i < n; ++i) {
-        for (Index j = 0; j < x_dim; ++j) X(j, i) = x_rows[i][j];
-        for (Index j = 0; j < y_dim; ++j) Y(j, i) = y_rows[i][j];
+        for (Index j = 0; j < x_dim; ++j)
+            X(j, i) = x_rows[i][j];
+        for (Index j = 0; j < y_dim; ++j)
+            Y(j, i) = y_rows[i][j];
     }
 
     return {std::move(X), std::move(Y)};

@@ -2,6 +2,7 @@
 #include <any>
 #include <cmath>
 #include <unordered_map>
+#include <utility>
 
 #include <nns/core/Types.hpp>
 #include <nns/learningrates/AnyLearningRate.hpp>
@@ -16,7 +17,7 @@ public:
 
     template <typename T>
     explicit SGDOptimizer(T&& lr_scheduler)
-        : lr_scheduler_(make_AnyLearningRateScheduler(std::forward<T>(lr_scheduler))){
+        : lr_scheduler_(make_AnyLearningRateScheduler(std::forward<T>(lr_scheduler))) {
     }
 
     std::any update_weights(Matrix& param, const Matrix& grad, std::any&&) {
@@ -36,17 +37,16 @@ public:
 private:
     template <typename DataType>
     void update_any(DataType& param, const DataType& grad) {
-        const double lr = lr_scheduler_->get_lr();
+        const Scalar lr = lr_scheduler_->get_lr();
         param -= lr * grad;
     }
 
     AnyLearningRateScheduler lr_scheduler_;
 };
 
-
-struct Beta1Tag{};
-struct Beta2Tag{};
-struct EpsTag{};
+struct Beta1Tag {};
+struct Beta2Tag {};
+struct EpsTag {};
 
 using Beta1 = StrongType<Beta1Tag>;
 using Beta2 = StrongType<Beta2Tag>;
@@ -59,8 +59,8 @@ public:
     }
 
     template <typename T>
-    explicit AdamOptimizer(T&& lr_scheduler, Beta1 beta1 = 0.9, Beta2 beta2 = 0.999,
-                           Eps eps = 1e-8)
+    explicit AdamOptimizer(T&& lr_scheduler, Beta1 beta1 = Beta1{0.9}, Beta2 beta2 = Beta2{0.999},
+                           Eps eps = Eps{1e-8})
         : lr_scheduler_(make_AnyLearningRateScheduler(std::forward<T>(lr_scheduler))),
           beta1_(beta1),
           beta2_(beta2),
@@ -104,22 +104,22 @@ private:
 
     template <typename T>
     void adam_step(T& param, const T& grad, Cache<T>& cache) {
-        const double lr = lr_scheduler_->get_lr();
-        const double t = lr_scheduler_->get_iter() + 1;
+        const Scalar lr = lr_scheduler_->get_lr();
+        const Scalar t = static_cast<Scalar>(lr_scheduler_->get_iter() + 1);
 
-        cache.m = beta1_ * cache.m + (1.0 - beta1_) * grad;
-        cache.v = beta2_ * cache.v + (1.0 - beta2_) * grad.cwiseProduct(grad);
+        cache.m = beta1_ * cache.m + (Scalar{1.0} - beta1_) * grad;
+        cache.v = beta2_ * cache.v + (Scalar{1.0} - beta2_) * grad.cwiseProduct(grad);
 
-        const T m_hat = cache.m / (1.0 - std::pow(beta1_, t));
-        const T v_hat = cache.v / (1.0 - std::pow(beta2_, t));
+        const T m_hat = cache.m / (Scalar{1.0} - std::pow(beta1_, t));
+        const T v_hat = cache.v / (Scalar{1.0} - std::pow(beta2_, t));
 
         param.array() -= lr * m_hat.array() / (v_hat.array().sqrt() + eps_);
     }
 
     AnyLearningRateScheduler lr_scheduler_;
-    double beta1_ = 0.9;
-    double beta2_ = 0.999;
-    double eps_ = 1e-8;
+    Scalar beta1_ = Scalar{0.9};
+    Scalar beta2_ = Scalar{0.999};
+    Scalar eps_ = Scalar{1e-8};
 };
 
 }  // namespace nns

@@ -12,8 +12,8 @@ PRO_DEF_MEM_DISPATCH(MemGradient, gradient);
 // clang-format off
 struct LossFunction
     : pro::facade_builder
-    ::add_convention<MemLoss, double(const Matrix&, const Matrix&) const>
-    ::add_convention<MemGradient, Matrix(const Matrix&, const Matrix&) const>::build {};
+    ::add_convention<MemLoss, Scalar(const Matrix&, const Matrix&)>
+    ::add_convention<MemGradient, Matrix(const Matrix&, const Matrix&)>::build {};
 }  // namespace LossProxy
 // clang-format on
 

@@ -2,8 +2,10 @@
 #include <cmath>
 #include <cstddef>
 
+#include <nns/core/Types.hpp>
+
 namespace nns {
-struct LRTag{};
+struct LRTag {};
 using LR = StrongType<LRTag>;
 
 class ConstantLR {
@@ -12,7 +14,7 @@ public:
     ConstantLR(LR lr) : lr_(lr) {
     }
 
-    double get_lr() {
+    Scalar get_lr() {
         return lr_;
     }
 
@@ -26,7 +28,7 @@ public:
 
 private:
     size_t iter_ = 1;
-    double lr_ = 0.01;
+    Scalar lr_ = Scalar{0.01};
 };
 
 class TimeDecayLR {
@@ -34,8 +36,8 @@ public:
     TimeDecayLR() = default;
     TimeDecayLR(LR lr) : lr_(lr) {
     }
-    double get_lr() {
-        double lr = lr_ * std::pow((s0 / (s0 + iter_)), p);
+    Scalar get_lr() {
+        Scalar lr = lr_ * std::pow((s0 / (s0 + iter_)), p);
         return lr;
     }
 
@@ -48,9 +50,9 @@ public:
     }
 
 private:
-    double s0 = 1.0;
-    double p = 0.5;
-    double lr_ = 1.0;
+    Scalar s0 = Scalar{1.0};
+    Scalar p = Scalar{0.5};
+    Scalar lr_ = Scalar{1.0};
     size_t iter_ = 1;
 };
 }  // namespace nns

@@ -3,13 +3,15 @@
 
 namespace nns {
 
-using Matrix = Eigen::MatrixXd;
-using Vector = Eigen::VectorXd;
+using Scalar = double;
+using Matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+using Vector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
 using Index = Eigen::Index;
 
-template<typename Tag, typename T = double>
+template <typename Tag, typename T = Scalar>
 struct StrongType {
-    explicit StrongType(T v) : value(v) {}
+    explicit StrongType(T v) : value(v) {
+    }
     T value;
 
     operator T() const {

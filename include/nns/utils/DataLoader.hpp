@@ -1,7 +1,4 @@
 #pragma once
-#include <nns/core/Types.hpp>
-#include <nns/utils/Random.hpp>
-
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -9,6 +6,9 @@
 #include <random>
 #include <utility>
 #include <vector>
+
+#include <nns/core/Types.hpp>
+#include <nns/utils/Random.hpp>
 
 namespace nns {
 
@@ -24,10 +24,7 @@ enum Shuffle : bool;
 class DataLoader {
 public:
     DataLoader(Matrix X, Matrix Y, BatchSize batch_size, Shuffle shuffle = Shuffle{true})
-        : X_(std::move(X)),
-          Y_(std::move(Y)),
-          batch_size_(batch_size),
-          shuffle_(shuffle) {
+        : X_(std::move(X)), Y_(std::move(Y)), batch_size_(batch_size), shuffle_(shuffle) {
 
         assert(X_.cols() == Y_.cols() && "X and Y must have the same number of samples");
         assert(batch_size_ > 0 && "Batch size must be > 0");
@@ -53,6 +50,10 @@ public:
         return static_cast<size_t>(X_.cols()) / batch_size_;
     }
 
+    size_t batch_size() const {
+        return batch_size_;
+    }
+
     size_t size() const {
         return static_cast<size_t>(X_.cols());
     }
@@ -74,7 +75,8 @@ public:
 
     class Iterator {
     public:
-        Iterator(const DataLoader* loader, size_t idx) : loader_(loader), idx_(idx) {}
+        Iterator(const DataLoader* loader, size_t idx) : loader_(loader), idx_(idx) {
+        }
 
         Batch operator*() const {
             return loader_->get_batch(idx_);
@@ -95,7 +97,7 @@ public:
     Iterator begin() const {
         return {this, 0};
     }
-    Iterator end()   const {
+    Iterator end() const {
         return {this, num_batches()};
     }
 

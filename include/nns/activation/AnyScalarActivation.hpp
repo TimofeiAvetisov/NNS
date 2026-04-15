@@ -1,4 +1,6 @@
 #pragma once
+#include <utility>
+
 #include <proxy/proxy.h>
 
 #include <nns/core/Types.hpp>
@@ -11,8 +13,8 @@ PRO_DEF_MEM_DISPATCH(MemForward, forward);
 // clang-format off
 struct ScalarActivation
     : pro::facade_builder 
-    ::add_convention<MemForward, double(double) const>
-    ::add_convention<MemDerivative, double(double) const>::build {};
+    ::add_convention<MemForward, Scalar(Scalar) const>
+    ::add_convention<MemDerivative, Scalar(Scalar) const>::build {};
 }  // namespace ScalarActivationProxy
 // clang-format on
 

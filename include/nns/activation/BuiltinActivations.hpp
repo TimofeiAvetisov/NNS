@@ -7,33 +7,33 @@
 
 namespace nns {
 struct ReLU {
-    double forward(double x) const {
-        return x > 0.0 ? x : 0.0;
+    Scalar forward(Scalar x) const {
+        return x > Scalar{0.0} ? x : Scalar{0.0};
     }
-    double derivative(double x) const {
-        return x > 0.0 ? 1.0 : 0.0;
+    Scalar derivative(Scalar x) const {
+        return x > Scalar{0.0} ? Scalar{1.0} : Scalar{0.0};
     }
 };
 
 struct Sigmoid {
-    double forward(double x) const {
-        return 1.0 / (1.0 + std::exp(-x));
+    Scalar forward(Scalar x) const {
+        return Scalar{1.0} / (Scalar{1.0} + std::exp(-x));
     }
 
-    double derivative(double x) const {
-        double y = forward(x);
-        return y * (1.0 - y);
+    Scalar derivative(Scalar x) const {
+        Scalar y = forward(x);
+        return y * (Scalar{1.0} - y);
     }
 };
 
 struct Tanh {
-    double forward(double x) const {
+    Scalar forward(Scalar x) const {
         return std::tanh(x);
     }
 
-    double derivative(double x) const {
-        double y = forward(x);
-        return 1.0 - y * y;
+    Scalar derivative(Scalar x) const {
+        Scalar y = forward(x);
+        return Scalar{1.0} - y * y;
     }
 };
 }  // namespace nns
