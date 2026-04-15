@@ -3,6 +3,7 @@
 #include <memory>
 #include <stdexcept>
 #include <utility>
+#include <optional>
 
 #include <nns/core/Types.hpp>
 #include <nns/optimizer/AnyOptimizer.hpp>
@@ -15,11 +16,10 @@ enum Out : Index;
 class LinearLayer {
 public:
     LinearLayer() = default;
-    LinearLayer(In in_dim, Out out_dim, InitScheme init_scheme = InitScheme::XavierNormal,
-                double gain = 1.0)
+    LinearLayer(In in_dim, Out out_dim, RandomGenerator& rng, Distribution dist = Distribution::Normal, Gain gain = Gain{1.0})
         : b_(Vector::Zero(out_dim)) {
-        A_ = RandomGenerator::instance().init_linear_weights(out_dim, in_dim, init_scheme,
-                                                             gain);  // rework the rng
+        A_ = Matrix{out_dim, in_dim};
+        rng.init_matrix(A_, dist, gain);
     }
 
     std::pair<Matrix, std::any> forward(Matrix&& X) {
@@ -46,8 +46,8 @@ public:
         std::any opt_cache_A, opt_cache_b;
         if (opt_cache.has_value()) {
             auto p = std::any_cast<std::pair<std::any, std::any>&&>(std::move(opt_cache));
-            opt_cache_A = p.first;
-            opt_cache_b = p.second;
+            opt_cache_A = std::move(p.first);
+            opt_cache_b = std::move(p.second);
         }
         std::any opt_cache_A_new = opt->update_weights(A_, dA, std::move(opt_cache_A));
         std::any opt_cache_b_new = opt->update_weights(b_, db, std::move(opt_cache_b));

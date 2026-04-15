@@ -36,7 +36,7 @@ public:
 private:
     template <typename DataType>
     void update_any(DataType& param, const DataType& grad) {
-        const double lr = lr_scheduler_->get_lr(iter_);
+        const double lr = lr_scheduler_->get_lr();
         param -= lr * grad;
     }
 
@@ -104,8 +104,8 @@ private:
 
     template <typename T>
     void adam_step(T& param, const T& grad, Cache<T>& cache) {
-        const double lr = lr_scheduler_->get_lr(iter_);
-        const double t = static_cast<double>(iter_ + 1);
+        const double lr = lr_scheduler_->get_lr();
+        const double t = lr_scheduler_->get_iter() + 1;
 
         cache.m = beta1_ * cache.m + (1.0 - beta1_) * grad;
         cache.v = beta2_ * cache.v + (1.0 - beta2_) * grad.cwiseProduct(grad);

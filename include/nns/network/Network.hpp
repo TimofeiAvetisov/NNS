@@ -14,7 +14,6 @@
 #include <nns/layers/AnyLayer.hpp>
 #include <nns/layers/LinearLayers.hpp>
 #include <nns/optimizer/AnyOptimizer.hpp>
-#include <nns/utils/Random.hpp>
 
 namespace nns {
 class NeuralNetwork {
@@ -77,14 +76,6 @@ public:
             cache[i] = layers_[i]->update(std::move(grads[i]), opt, std::move(cache[i]));
         }
         return cache;
-    }
-
-    static void reseed_rng(uint32_t seed) {
-        RandomGenerator::instance().reseed(seed);
-    }
-
-    static void show_rng_seed() {
-        RandomGenerator::instance().show_seed();
     }
 
 private:

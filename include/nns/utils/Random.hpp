@@ -4,79 +4,69 @@
 #include <iostream>
 #include <random>
 #include <stdexcept>
+#include <any>
+#include <ranges>
 
 #include <Eigen/Dense>
 
 #include <nns/core/Types.hpp>
 namespace nns {
-enum class InitScheme { Normal, XavierNormal, HeNormal };
+enum class Distribution { Normal, XavierNormal, HeNormal };
+
+struct GainTag{};
+using Gain = StrongType<GainTag>;
+enum Seed : uint32_t;
 
 class RandomGenerator {
 public:
-    static RandomGenerator& instance() {
-        static RandomGenerator inst;
-        return inst;
+    RandomGenerator(Seed seed = Seed{738547485u}) : gen_(seed), seed_(seed) {
     }
 
-    RandomGenerator(const RandomGenerator&) = delete;
-    RandomGenerator& operator=(const RandomGenerator&) = delete;
-    RandomGenerator(RandomGenerator&&) = delete;
-    RandomGenerator& operator=(RandomGenerator&&) = delete;
-
     void reseed(uint32_t seed) {
-        gen_.seed(seed);
         seed_ = seed;
+        gen_.seed(seed);
     }
 
     uint32_t seed() const noexcept {
         return seed_;
     }
 
-    void show_seed() const {
-        std::cout << "RandomGenerator seed: " << seed_ << std::endl;
-    }
-
-    Matrix init_linear_weights(size_t out_dim, size_t in_dim,
-                               InitScheme scheme = InitScheme::XavierNormal, double gain = 1.0) {
-        if (in_dim == 0 || out_dim == 0) {
-            throw std::invalid_argument("init_linear_weights: zero dimension");
-        }
-        if (!(gain > 0.0)) {
-            throw std::invalid_argument("init_linear_weights: gain must be > 0");
-        }
-
+    void init_matrix(Matrix& mat, Distribution dist = Distribution::Normal, Gain gain = Gain{1.0}) {
+        double std_dev;
+        size_t in_dim = mat.rows();
+        size_t out_dim = mat.cols();
         const double fan_in = static_cast<double>(in_dim);
         const double fan_out = static_cast<double>(out_dim);
-
-        double stddev = 1.0;
-        switch (scheme) {
-            case InitScheme::Normal:
-                stddev = gain;
+        switch(dist){
+            case Distribution::Normal:
+                std_dev = gain;
                 break;
-            case InitScheme::XavierNormal:
-                stddev = gain * std::sqrt(2.0 / (fan_in + fan_out));
+            case Distribution::XavierNormal:
+                std_dev = gain * std::sqrt(2.0 / (fan_in + fan_out));
                 break;
-            case InitScheme::HeNormal:
-                stddev = gain * std::sqrt(2.0 / fan_in);
+            case Distribution::HeNormal:
+                std_dev = gain * std::sqrt(2.0 / fan_in);
                 break;
-            default:
-                throw std::logic_error("Unknown InitScheme");
         }
 
-        return normal_matrix(out_dim, in_dim, 0.0, stddev);
+        std::normal_distribution<double> distr(0.0, std_dev);
+        mat = Matrix::NullaryExpr(mat.rows(), mat.cols(),
+                                    [&]() { return distr(gen_); });
+    }
+
+    // probably just std::vector is enough
+    template<std::ranges::random_access_range T> 
+    void shuffle(T& to_shuffle) {
+        std::shuffle(to_shuffle.begin(), to_shuffle.end(), gen_);
+    }
+
+    template<typename T>
+    T get_random_value(std::uniform_real_distribution<T> dist) {
+        return dist(gen_);
     }
 
 private:
-    RandomGenerator() : gen_(738547485u), seed_(738547485u) {
-    }
-
     std::mt19937 gen_;
     uint32_t seed_;
-
-    Matrix normal_matrix(size_t rows, size_t cols, double mean, double stddev) {
-        std::normal_distribution<double> dist(mean, stddev);
-        return Matrix::NullaryExpr(static_cast<Eigen::Index>(rows), static_cast<Eigen::Index>(cols),
-                                   [&]() { return dist(gen_); });
-    }
 };
 }  // namespace nns
