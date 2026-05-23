@@ -32,6 +32,14 @@ public:
     }
 
     void init_matrix(Matrix& mat, Distribution dist = Distribution::Normal, Gain gain = Gain{1.0}) {
+        if (mat.rows() <= 0 || mat.cols() <= 0) {
+            throw std::invalid_argument("RandomGenerator::init_matrix: matrix must be non-empty");
+        }
+        if (gain <= Scalar{0.0}) {
+            throw std::invalid_argument(
+                "RandomGenerator::init_matrix: gain must be greater than zero");
+        }
+
         Scalar std_dev = Scalar{1.0};
         size_t in_dim = mat.rows();
         size_t out_dim = mat.cols();

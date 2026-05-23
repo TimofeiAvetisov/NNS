@@ -14,6 +14,9 @@ namespace nns {
 inline std::pair<Matrix, Matrix> load_csv(const std::string& path,
                                           const std::unordered_set<size_t>& target_cols,
                                           char delimiter = ',', bool has_header = false) {
+    if (target_cols.empty()) {
+        throw std::invalid_argument("load_csv: target_cols must not be empty");
+    }
 
     std::ifstream file(path);
     if (!file.is_open()) {
@@ -26,6 +29,7 @@ inline std::pair<Matrix, Matrix> load_csv(const std::string& path,
     }
 
     std::vector<std::vector<Scalar>> x_rows, y_rows;
+    size_t expected_cols = 0;
     while (std::getline(file, line)) {
         if (line.empty()) {
             continue;
@@ -43,6 +47,24 @@ inline std::pair<Matrix, Matrix> load_csv(const std::string& path,
             }
             ++col;
         }
+
+        if (col == 0) {
+            continue;
+        }
+        if (expected_cols == 0) {
+            expected_cols = col;
+            for (size_t target_col : target_cols) {
+                if (target_col >= expected_cols) {
+                    throw std::invalid_argument("load_csv: target column index is out of range");
+                }
+            }
+            if (target_cols.size() == expected_cols) {
+                throw std::invalid_argument("load_csv: at least one feature column is required");
+            }
+        } else if (col != expected_cols) {
+            throw std::runtime_error("load_csv: inconsistent number of columns");
+        }
+
         x_rows.push_back(std::move(x_row));
         y_rows.push_back(std::move(y_row));
     }

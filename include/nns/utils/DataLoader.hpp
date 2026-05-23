@@ -1,9 +1,9 @@
 #pragma once
 #include <algorithm>
-#include <cassert>
 #include <cstddef>
 #include <numeric>
 #include <random>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -26,8 +26,15 @@ public:
     DataLoader(Matrix X, Matrix Y, BatchSize batch_size, Shuffle shuffle = Shuffle{true})
         : X_(std::move(X)), Y_(std::move(Y)), batch_size_(batch_size), shuffle_(shuffle) {
 
-        assert(X_.cols() == Y_.cols() && "X and Y must have the same number of samples");
-        assert(batch_size_ > 0 && "Batch size must be > 0");
+        if (X_.cols() != Y_.cols()) {
+            throw std::invalid_argument("DataLoader: X and Y must have the same number of samples");
+        }
+        if (batch_size_ == 0) {
+            throw std::invalid_argument("DataLoader: batch_size must be greater than zero");
+        }
+        if (X_.cols() == 0) {
+            throw std::invalid_argument("DataLoader: dataset must contain at least one sample");
+        }
 
         const size_t n = static_cast<size_t>(X_.cols());
         indices_.resize(n);
@@ -35,7 +42,9 @@ public:
     }
 
     void reset_epoch() {
-        assert(!shuffle_ && "reset_epoch() without RNG called on a shuffling DataLoader");
+        if (shuffle_) {
+            throw std::logic_error("DataLoader: reset_epoch() without RNG requires Shuffle{false}");
+        }
         ++epoch_;
     }
 
@@ -59,6 +68,10 @@ public:
     }
 
     Batch get_batch(size_t batch_idx) const {
+        if (batch_idx >= num_batches()) {
+            throw std::out_of_range("DataLoader: batch_idx is out of range");
+        }
+
         const size_t start = batch_idx * batch_size_;
         const size_t end = std::min(start + batch_size_, indices_.size());
         const Index cols = static_cast<Index>(end - start);

@@ -1,22 +1,14 @@
 #include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
-#include <nns/activation/BuiltinActivations.hpp>
-#include <nns/core/Types.hpp>
-#include <nns/layers/LinearLayers.hpp>
-#include <nns/learningrates/BuiltinLearningRates.hpp>
-#include <nns/loss/AnyLossFunction.hpp>
-#include <nns/loss/BuiltinLoss.hpp>
-#include <nns/network/Network.hpp>
-#include <nns/optimizer/AnyOptimizer.hpp>
-#include <nns/optimizer/BuiltinOptimizers.hpp>
-#include <nns/trainer/Trainer.hpp>
-#include <nns/utils/DataLoader.hpp>
-#include <nns/utils/Random.hpp>
+#include <nns/NNS.hpp>
 
 using Catch::Approx;
 
@@ -41,6 +33,23 @@ TEST_CASE("DataLoader splits matrices into full batches", "[utils][dataloader]")
     REQUIRE(first_batch.X(0, 0) == Approx(X(0, 0)));
     REQUIRE(first_batch.X(1, 1) == Approx(X(1, 1)));
     REQUIRE(first_batch.Y(0, 1) == Approx(Y(0, 1)));
+
+    REQUIRE_THROWS_AS(loader.get_batch(2), std::out_of_range);
+}
+
+TEST_CASE("DataLoader rejects invalid inputs", "[utils][dataloader]") {
+    nns::Matrix X = nns::Matrix::Zero(2, 3);
+    nns::Matrix Y = nns::Matrix::Zero(1, 2);
+
+    REQUIRE_THROWS_AS(nns::DataLoader(X, Y, nns::BatchSize{1}), std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::DataLoader(X, nns::Matrix::Zero(1, 3), nns::BatchSize{0}),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::DataLoader(nns::Matrix{2, 0}, nns::Matrix{1, 0}, nns::BatchSize{1}),
+                      std::invalid_argument);
+
+    nns::DataLoader shuffling_loader(X, nns::Matrix::Zero(1, 3), nns::BatchSize{1},
+                                     nns::Shuffle{true});
+    REQUIRE_THROWS_AS(shuffling_loader.reset_epoch(), std::logic_error);
 }
 
 TEST_CASE("Built-in losses return expected values and gradients", "[loss]") {
@@ -74,6 +83,21 @@ TEST_CASE("Built-in losses return expected values and gradients", "[loss]") {
     REQUIRE(ce_grad.rows() == logits.rows());
     REQUIRE(ce_grad.cols() == logits.cols());
     REQUIRE(ce_grad.col(0).sum() == Approx(0.0).margin(1e-12));
+
+    REQUIRE_THROWS_AS(mse.loss(y_hat, nns::Matrix::Zero(1, 2)), std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::CrossEntropyLoss::softmax(nns::Matrix{0, 0}), std::invalid_argument);
+}
+
+TEST_CASE("All built-in losses reject shape mismatches", "[loss]") {
+    nns::Matrix a = nns::Matrix::Ones(2, 2);
+    nns::Matrix b = nns::Matrix::Ones(1, 2);
+
+    REQUIRE_THROWS_AS(nns::MSELoss{}.gradient(a, b), std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::MAELoss{}.gradient(a, b), std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::HuberLoss{}.gradient(a, b), std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::BCELoss{}.gradient(a, b), std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::BCEWithLogitsLoss{}.gradient(a, b), std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::CrossEntropyLoss{}.gradient(a, b), std::invalid_argument);
 }
 
 TEST_CASE("SGD updates matrix weights", "[optimizer]") {
@@ -88,6 +112,27 @@ TEST_CASE("SGD updates matrix weights", "[optimizer]") {
 
     REQUIRE(weights(0, 0) == Approx(0.95));
     REQUIRE(weights(0, 1) == Approx(-0.95));
+
+    REQUIRE_THROWS_AS(optimizer.update_weights(weights, nns::Matrix::Zero(2, 2), {}),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::ConstantLR(nns::LR{0.0}), std::invalid_argument);
+}
+
+TEST_CASE("Adam and learning rate schedulers reject invalid parameters", "[optimizer][lr]") {
+    nns::Matrix weights = nns::Matrix::Ones(1, 1);
+    nns::Matrix gradients = nns::Matrix::Ones(1, 1);
+
+    nns::AdamOptimizer bad_beta1(nns::ConstantLR(nns::LR{0.01}), nns::Beta1{1.0});
+    REQUIRE_THROWS_AS(bad_beta1.update_weights(weights, gradients, {}), std::invalid_argument);
+
+    nns::AdamOptimizer bad_beta2(nns::ConstantLR(nns::LR{0.01}), nns::Beta1{0.9}, nns::Beta2{1.0});
+    REQUIRE_THROWS_AS(bad_beta2.update_weights(weights, gradients, {}), std::invalid_argument);
+
+    nns::AdamOptimizer bad_eps(nns::ConstantLR(nns::LR{0.01}), nns::Beta1{0.9}, nns::Beta2{0.999},
+                               nns::Eps{0.0});
+    REQUIRE_THROWS_AS(bad_eps.update_weights(weights, gradients, {}), std::invalid_argument);
+
+    REQUIRE_THROWS_AS(nns::TimeDecayLR(nns::LR{0.0}), std::invalid_argument);
 }
 
 TEST_CASE("NeuralNetwork supports predict, forward, and backward", "[network]") {
@@ -115,6 +160,80 @@ TEST_CASE("NeuralNetwork supports predict, forward, and backward", "[network]") 
     REQUIRE(dX.rows() == 2);
     REQUIRE(dX.cols() == 4);
     REQUIRE(gradients.has_value());
+
+    REQUIRE_THROWS_AS(net.predict(nns::Matrix::Zero(3, 1)), std::invalid_argument);
+    REQUIRE_THROWS_AS(net.backward(nns::Matrix::Ones(1, 4), std::any{}), std::invalid_argument);
+}
+
+TEST_CASE("NeuralNetwork rejects operations without layers", "[network]") {
+    nns::NeuralNetwork net;
+
+    REQUIRE_THROWS_AS(net.predict(nns::Matrix::Ones(1, 1)), std::logic_error);
+    REQUIRE_THROWS_AS(net.forward(nns::Matrix::Ones(1, 1)), std::logic_error);
+}
+
+TEST_CASE("Layers reject invalid dimensions and backward inputs", "[layers]") {
+    nns::RandomGenerator rng(nns::Seed{99});
+
+    REQUIRE_THROWS_AS(nns::LinearLayer(nns::In{0}, nns::Out{1}, rng), std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::LinearLayer(nns::In{1}, nns::Out{0}, rng), std::invalid_argument);
+
+    nns::LinearLayer layer(nns::In{2}, nns::Out{1}, rng);
+    REQUIRE_THROWS_AS(layer.predict(nns::Matrix::Zero(3, 1)), std::invalid_argument);
+
+    auto [Y, cache] = layer.forward(nns::Matrix::Ones(2, 1));
+    REQUIRE_THROWS_AS(layer.backward(nns::Matrix::Ones(2, 1), cache), std::invalid_argument);
+    REQUIRE_THROWS_AS(layer.backward(nns::Matrix::Ones(1, 1), std::any{}), std::invalid_argument);
+
+    nns::ActivationLayer activation(nns::ReLU{});
+    REQUIRE_THROWS_AS(activation.predict(nns::Matrix{0, 0}), std::invalid_argument);
+}
+
+TEST_CASE("RandomGenerator rejects invalid initialization input", "[utils][random]") {
+    nns::RandomGenerator rng(nns::Seed{1});
+    nns::Matrix empty(0, 0);
+    nns::Matrix non_empty(1, 1);
+
+    REQUIRE_THROWS_AS(rng.init_matrix(empty), std::invalid_argument);
+    REQUIRE_THROWS_AS(rng.init_matrix(non_empty, nns::Distribution::Normal, nns::Gain{0.0}),
+                      std::invalid_argument);
+}
+
+TEST_CASE("load_csv parses valid files and rejects invalid files", "[utils][csv]") {
+    const auto base = std::filesystem::temp_directory_path();
+    const auto valid_path = base / "nns_valid.csv";
+    const auto inconsistent_path = base / "nns_inconsistent.csv";
+
+    {
+        std::ofstream file(valid_path);
+        file << "label,x1,x2\n";
+        file << "1,0.5,0.2\n";
+        file << "0,0.1,0.9\n";
+    }
+
+    auto [X, Y] = nns::load_csv(valid_path.string(), {0}, ',', true);
+    REQUIRE(X.rows() == 2);
+    REQUIRE(X.cols() == 2);
+    REQUIRE(Y.rows() == 1);
+    REQUIRE(Y.cols() == 2);
+    REQUIRE(Y(0, 0) == Approx(1.0));
+    REQUIRE(X(0, 1) == Approx(0.1));
+
+    {
+        std::ofstream file(inconsistent_path);
+        file << "1,2,3\n";
+        file << "4,5\n";
+    }
+
+    REQUIRE_THROWS_AS(nns::load_csv(valid_path.string(), {}, ',', true), std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::load_csv(valid_path.string(), {4}, ',', true), std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::load_csv(valid_path.string(), {0, 1, 2}, ',', true),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::load_csv(inconsistent_path.string(), {0}), std::runtime_error);
+    REQUIRE_THROWS_AS(nns::load_csv((base / "nns_missing.csv").string(), {0}), std::runtime_error);
+
+    std::filesystem::remove(valid_path);
+    std::filesystem::remove(inconsistent_path);
 }
 
 TEST_CASE("Trainer exposes fit_epoch and fit returns scalar loss history", "[trainer]") {
@@ -145,4 +264,21 @@ TEST_CASE("Trainer exposes fit_epoch and fit returns scalar loss history", "[tra
     REQUIRE(history.size() == 2);
     REQUIRE(std::isfinite(history[0]));
     REQUIRE(std::isfinite(history[1]));
+
+    trainer.reset_optimizer_state();
+    REQUIRE(std::isfinite(trainer.fit_epoch()));
+}
+
+TEST_CASE("Trainer rejects loaders without full batches", "[trainer]") {
+    nns::RandomGenerator rng(nns::Seed{321});
+    nns::Matrix X = nns::Matrix::Ones(1, 1);
+    nns::Matrix Y = nns::Matrix::Ones(1, 1);
+    nns::DataLoader loader(X, Y, nns::BatchSize{2}, nns::Shuffle{false});
+    nns::NeuralNetwork net(nns::LinearLayer(nns::In{1}, nns::Out{1}, rng));
+    nns::AnyOptimizer optimizer =
+        nns::make_AnyOptimizer(nns::SGDOptimizer(nns::ConstantLR(nns::LR{0.01})));
+    nns::AnyLossFunction loss = nns::make_AnyLossFunction<nns::MSELoss>();
+    nns::Trainer trainer(net, optimizer, loss, loader);
+
+    REQUIRE_THROWS_AS(trainer.fit_epoch(), std::logic_error);
 }

@@ -1,10 +1,10 @@
 #pragma once
 #include <algorithm>
-#include <cassert>
 #include <initializer_list>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -26,6 +26,7 @@ public:
     }
 
     Matrix predict(const Matrix& X) const {
+        validate_has_layers("predict");
         Matrix Y = X;
         for (const auto& layer : layers_) {
             Y = layer->predict(Y);
@@ -34,6 +35,7 @@ public:
     }
 
     std::pair<Matrix, std::any> forward(Matrix&& X) {
+        validate_has_layers("forward");
         std::vector<std::any> layers_cache;
         layers_cache.reserve(layers_.size());
         for (AnyLayer& layer : layers_) {
@@ -45,13 +47,21 @@ public:
     }
 
     std::pair<Matrix, std::any> backward(Matrix&& dL_dy, const std::any& layers_cache) {
+        validate_has_layers("backward");
         std::vector<std::any> grads;
         grads.reserve(layers_.size());
 
-        assert(layers_cache.has_value() && "Empty cache passed in Newtorwk::backward");
+        if (!layers_cache.has_value()) {
+            throw std::invalid_argument("NeuralNetwork::backward: layers_cache is empty");
+        }
 
         const std::vector<std::any>& cache =
             std::any_cast<const std::vector<std::any>&>(layers_cache);
+        if (cache.size() != layers_.size()) {
+            throw std::invalid_argument(
+                "NeuralNetwork::backward: cache size must match number of layers");
+        }
+
         for (size_t i = 0; i < layers_.size(); ++i) {
             size_t rev_i = layers_.size() - 1 - i;
             auto [dL_dy_new, grad] = layers_[rev_i]->backward(std::move(dL_dy), cache[rev_i]);
@@ -64,11 +74,21 @@ public:
     }
 
     std::any update(std::any&& layers_gradients, AnyOptimizer& opt, std::any&& opt_cache) {
+        validate_has_layers("update");
         std::vector<std::any> grads =
             std::any_cast<std::vector<std::any>&&>(std::move(layers_gradients));
+        if (grads.size() != layers_.size()) {
+            throw std::invalid_argument(
+                "NeuralNetwork::update: gradients size must match number of layers");
+        }
+
         std::vector<std::any> cache;
         if (opt_cache.has_value()) {
             cache = std::any_cast<std::vector<std::any>&&>(std::move(opt_cache));
+            if (cache.size() != layers_.size()) {
+                throw std::invalid_argument(
+                    "NeuralNetwork::update: optimizer cache size must match number of layers");
+            }
         } else {
             cache.assign(layers_.size(), std::any{});
         }
@@ -80,6 +100,13 @@ public:
     }
 
 private:
+    void validate_has_layers(const char* method) const {
+        if (layers_.empty()) {
+            throw std::logic_error(std::string("NeuralNetwork::") + method +
+                                   ": network must contain at least one layer");
+        }
+    }
+
     std::vector<AnyLayer> layers_;
 };
 }  // namespace nns

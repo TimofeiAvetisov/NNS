@@ -1,7 +1,7 @@
 #pragma once
 
 #include <any>
-#include <iostream>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -20,12 +20,16 @@ public:
 
     Scalar fit_epoch(RandomGenerator& rng) {
         data_.reset_epoch(rng);
-        return train_current_epoch(true);
+        return train_current_epoch();
     }
 
     Scalar fit_epoch() {
         data_.reset_epoch();
-        return train_current_epoch(false);
+        return train_current_epoch();
+    }
+
+    void reset_optimizer_state() {
+        opt_cache_.reset();
     }
 
     std::vector<Scalar> fit(size_t epochs, RandomGenerator& rng) {
@@ -47,11 +51,13 @@ public:
     }
 
 private:
-    Scalar train_current_epoch(bool show_progress) {
+    Scalar train_current_epoch() {
+        if (data_.num_batches() == 0) {
+            throw std::logic_error("Trainer::fit_epoch: DataLoader contains no full batches");
+        }
+
         Scalar loss_sum = Scalar{0.0};
-        size_t batch_ind = 0;
         for (auto [bX, bY] : data_) {
-            ++batch_ind;
             auto [pred_Y, layer_cache] = net_.forward(std::move(bX));
             Scalar loss_value = loss_func_->loss(pred_Y, bY);
             loss_sum += loss_value;
@@ -59,14 +65,6 @@ private:
             auto [dL_dx, gradients] = net_.backward(std::move(dL_dy), layer_cache);
             opt_cache_ = net_.update(std::move(gradients), opt_, std::move(opt_cache_));
             opt_->iter_step();
-
-            if (show_progress) {
-                std::cout << "batch: " << batch_ind << '\r';
-            }
-        }
-
-        if (show_progress) {
-            std::cout << '\n';
         }
 
         return loss_sum / static_cast<Scalar>(data_.num_batches());

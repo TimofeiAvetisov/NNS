@@ -1,6 +1,8 @@
 #pragma once
 #include <any>
 #include <cmath>
+#include <stdexcept>
+#include <string>
 #include <unordered_map>
 #include <utility>
 
@@ -21,11 +23,13 @@ public:
     }
 
     std::any update_weights(Matrix& param, const Matrix& grad, std::any&&) {
+        validate_same_shape(param, grad, "SGDOptimizer::update_weights(Matrix)");
         update_any(param, grad);
         return {};
     }
 
     std::any update_weights(Vector& param, const Vector& grad, std::any&&) {
+        validate_same_shape(param, grad, "SGDOptimizer::update_weights(Vector)");
         update_any(param, grad);
         return {};
     }
@@ -39,6 +43,14 @@ private:
     void update_any(DataType& param, const DataType& grad) {
         const Scalar lr = lr_scheduler_->get_lr();
         param -= lr * grad;
+    }
+
+    template <typename DataType>
+    void validate_same_shape(const DataType& param, const DataType& grad, const char* context) {
+        if (param.rows() != grad.rows() || param.cols() != grad.cols()) {
+            throw std::invalid_argument(std::string(context) +
+                                        ": parameter and gradient shapes must match");
+        }
     }
 
     AnyLearningRateScheduler lr_scheduler_;
@@ -68,6 +80,7 @@ public:
     }
 
     std::any update_weights(Matrix& param, const Matrix& grad, std::any&& opt_cache) {
+        validate_same_shape(param, grad, "AdamOptimizer::update_weights(Matrix)");
         Cache<Matrix> cache;
         if (!opt_cache.has_value()) {
             cache.m = Matrix::Zero(grad.rows(), grad.cols());
@@ -80,6 +93,7 @@ public:
     }
 
     std::any update_weights(Vector& param, const Vector& grad, std::any&& opt_cache) {
+        validate_same_shape(param, grad, "AdamOptimizer::update_weights(Vector)");
         Cache<Vector> cache;
         if (!opt_cache.has_value()) {
             cache.m = Vector::Zero(grad.size());
@@ -104,6 +118,16 @@ private:
 
     template <typename T>
     void adam_step(T& param, const T& grad, Cache<T>& cache) {
+        if (beta1_ < Scalar{0.0} || beta1_ >= Scalar{1.0}) {
+            throw std::invalid_argument("AdamOptimizer: beta1 must be in [0, 1)");
+        }
+        if (beta2_ < Scalar{0.0} || beta2_ >= Scalar{1.0}) {
+            throw std::invalid_argument("AdamOptimizer: beta2 must be in [0, 1)");
+        }
+        if (eps_ <= Scalar{0.0}) {
+            throw std::invalid_argument("AdamOptimizer: eps must be greater than zero");
+        }
+
         const Scalar lr = lr_scheduler_->get_lr();
         const Scalar t = static_cast<Scalar>(lr_scheduler_->get_iter() + 1);
 
@@ -114,6 +138,14 @@ private:
         const T v_hat = cache.v / (Scalar{1.0} - std::pow(beta2_, t));
 
         param.array() -= lr * m_hat.array() / (v_hat.array().sqrt() + eps_);
+    }
+
+    template <typename DataType>
+    void validate_same_shape(const DataType& param, const DataType& grad, const char* context) {
+        if (param.rows() != grad.rows() || param.cols() != grad.cols()) {
+            throw std::invalid_argument(std::string(context) +
+                                        ": parameter and gradient shapes must match");
+        }
     }
 
     AnyLearningRateScheduler lr_scheduler_;
