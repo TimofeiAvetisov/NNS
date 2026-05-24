@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="600" viewBox="0 0 1180 600">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#1f2937"/>
+    </marker>
+    <style>
+      .title { font: 700 24px Arial, sans-serif; fill: #111827; }
+      .label { font: 700 18px Arial, sans-serif; fill: #111827; }
+      .small { font: 14px Arial, sans-serif; fill: #374151; }
+      .mono { font: 14px Consolas, monospace; fill: #111827; }
+      .core { fill: #eff6ff; stroke: #1d4ed8; stroke-width: 2; rx: 8; }
+      .data { fill: #ecfdf5; stroke: #047857; stroke-width: 2; rx: 8; }
+      .algo { fill: #fff7ed; stroke: #c2410c; stroke-width: 2; rx: 8; }
+      .iface { fill: #f5f3ff; stroke: #6d28d9; stroke-width: 2; rx: 8; }
+      .arrow { stroke: #1f2937; stroke-width: 2.6; fill: none; marker-end: url(#arrow); }
+      .dash { stroke: #6b7280; stroke-width: 2.2; fill: none; marker-end: url(#arrow); stroke-dasharray: 8 6; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1180" height="600" fill="#ffffff"/>
+  <text x="40" y="48" class="title">Компонентная архитектура NNS</text>
+
+  <rect x="470" y="92" width="240" height="86" class="core"/>
+  <text x="528" y="126" class="label">Trainer</text>
+  <text x="500" y="153" class="mono">fit(), fit_epoch()</text>
+
+  <rect x="80" y="240" width="230" height="92" class="data"/>
+  <text x="143" y="274" class="label">DataLoader</text>
+  <text x="110" y="301" class="mono">Batch {X, Y}</text>
+  <text x="110" y="323" class="small">shuffle, full batches</text>
+
+  <rect x="380" y="240" width="240" height="92" class="core"/>
+  <text x="438" y="274" class="label">NeuralNetwork</text>
+  <text x="410" y="301" class="mono">predict/forward</text>
+  <text x="410" y="323" class="mono">backward/update</text>
+
+  <rect x="720" y="240" width="180" height="92" class="algo"/>
+  <text x="775" y="274" class="label">Loss</text>
+  <text x="748" y="301" class="mono">loss()</text>
+  <text x="748" y="323" class="mono">gradient()</text>
+
+  <rect x="950" y="240" width="170" height="92" class="algo"/>
+  <text x="982" y="274" class="label">Optimizer</text>
+  <text x="977" y="301" class="mono">SGD, Adam</text>
+  <text x="977" y="323" class="small">updates params</text>
+
+  <rect x="390" y="420" width="200" height="86" class="iface"/>
+  <text x="435" y="454" class="label">AnyLayer</text>
+  <text x="420" y="481" class="mono">proxy facade</text>
+
+  <rect x="650" y="420" width="220" height="86" class="iface"/>
+  <text x="690" y="454" class="label">AnyLossFunction</text>
+  <text x="690" y="481" class="mono">proxy facade</text>
+
+  <rect x="920" y="420" width="220" height="86" class="iface"/>
+  <text x="955" y="454" class="label">AnyOptimizer</text>
+  <text x="950" y="481" class="mono">AnyLearningRate</text>
+
+  <rect x="80" y="420" width="230" height="86" class="data"/>
+  <text x="119" y="454" class="label">load_csv / Matrix</text>
+  <text x="110" y="481" class="mono">objects in columns</text>
+
+  <path d="M 540 178 L 250 238" class="arrow"/>
+  <path d="M 560 178 L 500 238" class="arrow"/>
+  <path d="M 630 178 L 790 238" class="arrow"/>
+  <path d="M 680 178 L 1010 238" class="arrow"/>
+  <path d="M 310 286 L 368 286" class="arrow"/>
+  <path d="M 620 286 L 708 286" class="arrow"/>
+  <path d="M 900 286 L 938 286" class="arrow"/>
+  <path d="M 500 332 L 500 408" class="dash"/>
+  <path d="M 810 332 L 760 408" class="dash"/>
+  <path d="M 1035 332 L 1035 408" class="dash"/>
+  <path d="M 195 420 L 195 344" class="dash"/>
+</svg>

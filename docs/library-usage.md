@@ -86,10 +86,11 @@ nns::LinearLayer layer(
     nns::Gain{1.0});
 ```
 
-Параметры:
-
-- `A`: `out x in`.
-- `b`: `out x 1`.
+Аргументы:
+ - `In, Out` : размер слоя;
+ - `rng` : объект класса RandomGenerator, передавать для того чтобы зафиксировать seed, по умолчанию создает свой объект класса;
+ - `Distribution`: одна из поддерживаемых схем инициализации, значение по умолчанию - `Distribution::Normal`;
+ - `Gain` : параметр gain для `RandomGenerator::init_matrix`, по умолчанию равен 1;
 
 Проверки:
 
@@ -103,7 +104,7 @@ nns::LinearLayer layer(
 
 Файл: `include/nns/layers/ActivationLayers.hpp`.
 
-Обычно создается автоматически при передаче activation-объекта в `NeuralNetwork`.
+Создается автоматически при передаче activation-объекта в `NeuralNetwork`.
 
 Встроенные activation-функции:
 
@@ -120,6 +121,8 @@ struct CustomActivation {
 };
 ```
 
+Поддерживаются только скалярные функции активации.
+
 ## NeuralNetwork
 
 Файл: `include/nns/network/Network.hpp`.
@@ -130,6 +133,7 @@ nns::NeuralNetwork net(
     nns::ReLU(),
     nns::LinearLayer(nns::In{128}, nns::Out{10}, rng, nns::Distribution::XavierNormal));
 ```
+В конструктор можно передать произвольную конфигурацию состоящую из объектов конструируемых в ActivationLayer или LinearLayer.
 
 Методы:
 

@@ -8,7 +8,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(catch2)
 
 add_executable(nns_tests
-    nns_smoke_tests.cpp
+    activation_tests.cpp
+    core_tests.cpp
+    layer_network_trainer_tests.cpp
+    loss_tests.cpp
+    optimizer_tests.cpp
+    utils_tests.cpp
 )
 
 target_link_libraries(nns_tests PRIVATE
