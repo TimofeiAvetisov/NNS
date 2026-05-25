@@ -9,6 +9,11 @@ namespace nns {
 struct LRTag {};
 using LR = StrongType<LRTag>;
 
+struct S0Tag {};
+using S0 = StrongType<S0Tag>;
+
+struct PTag {};
+using P = StrongType<PTag>;
 class ConstantLR {
 public:
     ConstantLR() = default;
@@ -43,7 +48,7 @@ private:
 class TimeDecayLR {
 public:
     TimeDecayLR() = default;
-    TimeDecayLR(LR lr) : lr_(lr) {
+    TimeDecayLR(LR lr, S0 s0, P p) : lr_(lr), s0(s0), p(p) {
         validate_params();
     }
     Scalar get_lr() {

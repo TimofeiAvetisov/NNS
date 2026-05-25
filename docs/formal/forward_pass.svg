@@ -1,86 +1,97 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="520" viewBox="0 0 1180 520">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620">
   <defs>
-    <marker id="arrow-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
-      <path d="M 0 0 L 12 6 L 0 12 z" fill="#2563eb"/>
+    <marker id="blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#2563eb"/>
     </marker>
-    <marker id="arrow-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
-      <path d="M 0 0 L 12 6 L 0 12 z" fill="#059669"/>
+    <marker id="green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#059669"/>
     </marker>
     <style>
-      .title { font: 700 24px Arial, sans-serif; fill: #111827; }
-      .label { font: 600 17px Arial, sans-serif; fill: #111827; }
-      .small { font: 14px Arial, sans-serif; fill: #374151; }
-      .mono { font: 14px Consolas, monospace; fill: #111827; }
-      .box { fill: #f9fafb; stroke: #111827; stroke-width: 2; rx: 8; }
-      .layer { fill: #eef2ff; stroke: #3730a3; stroke-width: 2; rx: 8; }
-      .cache { fill: #ecfdf5; stroke: #047857; stroke-width: 2; rx: 8; }
-      .arrow { stroke: #2563eb; stroke-width: 3; fill: none; marker-end: url(#arrow-blue); }
-      .cache-arrow { stroke: #059669; stroke-width: 3; fill: none; marker-end: url(#arrow-green); stroke-dasharray: 8 6; }
-      .dim { fill: #fff7ed; stroke: #c2410c; stroke-width: 1.8; rx: 6; }
+      .title{font:700 26px Arial,sans-serif;fill:#111827}
+      .h{font:700 17px Arial,sans-serif;fill:#111827}
+      .t{font:14px Arial,sans-serif;fill:#374151}
+      .m{font:14px Consolas,monospace;fill:#111827}
+      .box{fill:#f9fafb;stroke:#111827;stroke-width:2;rx:10}
+      .layer{fill:#eef2ff;stroke:#3730a3;stroke-width:2;rx:10}
+      .cache{fill:#ecfdf5;stroke:#047857;stroke-width:2;rx:10}
+      .note{fill:#fff7ed;stroke:#c2410c;stroke-width:2;rx:8}
+      .a{stroke:#2563eb;stroke-width:2.8;fill:none;marker-end:url(#blue)}
+      .c{stroke:#059669;stroke-width:2.4;fill:none;stroke-dasharray:7 6;marker-end:url(#green)}
     </style>
   </defs>
 
-  <rect x="0" y="0" width="1180" height="520" fill="#ffffff"/>
-  <text x="40" y="48" class="title">Прямой проход: вычисление logits и формирование кэшей слоев</text>
+  <rect width="1200" height="620" fill="#ffffff"/>
+  <text x="50" y="52" class="title">Прямой проход и формирование кэшей</text>
 
-  <rect x="40" y="120" width="140" height="82" class="box"/>
-  <text x="76" y="152" class="label">Вход X</text>
-  <text x="67" y="179" class="mono">784 x B</text>
+  <rect x="40" y="135" width="135" height="90" class="box"/>
+  <text x="108" y="169" text-anchor="middle" class="h">Input</text>
+  <text x="108" y="196" text-anchor="middle" class="m">X</text>
+  <text x="108" y="216" text-anchor="middle" class="m">784 x B</text>
 
-  <path d="M 180 161 L 238 161" class="arrow"/>
-  <rect x="250" y="105" width="155" height="112" class="layer"/>
-  <text x="289" y="137" class="label">Linear</text>
-  <text x="282" y="164" class="mono">A X + b</text>
-  <text x="282" y="190" class="mono">784 -> 128</text>
+  <rect x="230" y="120" width="145" height="120" class="layer"/>
+  <text x="303" y="154" text-anchor="middle" class="h">Linear</text>
+  <text x="303" y="181" text-anchor="middle" class="m">A X + b</text>
+  <text x="303" y="207" text-anchor="middle" class="m">784 -> 128</text>
 
-  <path d="M 405 161 L 463 161" class="arrow"/>
-  <rect x="475" y="105" width="150" height="112" class="layer"/>
-  <text x="516" y="137" class="label">ReLU</text>
-  <text x="502" y="164" class="mono">max(0, x)</text>
-  <text x="512" y="190" class="mono">128 x B</text>
+  <rect x="430" y="120" width="145" height="120" class="layer"/>
+  <text x="503" y="154" text-anchor="middle" class="h">ReLU</text>
+  <text x="503" y="181" text-anchor="middle" class="m">max(0,x)</text>
+  <text x="503" y="207" text-anchor="middle" class="m">128 x B</text>
 
-  <path d="M 625 161 L 683 161" class="arrow"/>
-  <rect x="695" y="105" width="155" height="112" class="layer"/>
-  <text x="734" y="137" class="label">Linear</text>
-  <text x="724" y="164" class="mono">128 -> 64</text>
-  <text x="722" y="190" class="mono">A X + b</text>
+  <rect x="630" y="120" width="145" height="120" class="layer"/>
+  <text x="703" y="154" text-anchor="middle" class="h">Linear</text>
+  <text x="703" y="181" text-anchor="middle" class="m">A X + b</text>
+  <text x="703" y="207" text-anchor="middle" class="m">128 -> 64</text>
 
-  <path d="M 850 161 L 908 161" class="arrow"/>
-  <rect x="920" y="105" width="150" height="112" class="layer"/>
-  <text x="961" y="137" class="label">ReLU</text>
-  <text x="958" y="164" class="mono">64 x B</text>
-  <text x="938" y="190" class="small">поэлементно</text>
+  <rect x="830" y="120" width="145" height="120" class="layer"/>
+  <text x="903" y="154" text-anchor="middle" class="h">ReLU</text>
+  <text x="903" y="181" text-anchor="middle" class="m">max(0,x)</text>
+  <text x="903" y="207" text-anchor="middle" class="m">64 x B</text>
 
-  <path d="M 995 217 C 995 252, 1030 254, 1055 254 L 1090 254" class="arrow"/>
-  <rect x="920" y="292" width="150" height="92" class="layer"/>
-  <text x="959" y="324" class="label">Linear</text>
-  <text x="948" y="351" class="mono">64 -> 10</text>
-  <text x="951" y="376" class="mono">logits</text>
+  <rect x="1030" y="120" width="145" height="120" class="layer"/>
+  <text x="1103" y="154" text-anchor="middle" class="h">Linear</text>
+  <text x="1103" y="181" text-anchor="middle" class="m">A X + b</text>
+  <text x="1103" y="207" text-anchor="middle" class="m">64 -> 10</text>
 
-  <path d="M 920 338 L 842 338" class="arrow"/>
-  <rect x="690" y="292" width="140" height="92" class="box"/>
-  <text x="731" y="324" class="label">Выход</text>
-  <text x="718" y="351" class="mono">Y_hat</text>
-  <text x="720" y="376" class="mono">10 x B</text>
+  <path d="M175 180 H230" class="a"/>
+  <path d="M375 180 H430" class="a"/>
+  <path d="M575 180 H630" class="a"/>
+  <path d="M775 180 H830" class="a"/>
+  <path d="M975 180 H1030" class="a"/>
 
-  <rect x="250" y="300" width="155" height="112" class="cache"/>
-  <text x="286" y="331" class="label">Cache[0]</text>
-  <text x="273" y="359" class="small">вход линейного</text>
-  <text x="287" y="383" class="mono">X: 784 x B</text>
+  <rect x="1010" y="315" width="165" height="90" class="box"/>
+  <text x="1093" y="349" text-anchor="middle" class="h">Output</text>
+  <text x="1093" y="376" text-anchor="middle" class="m">logits</text>
+  <text x="1093" y="397" text-anchor="middle" class="m">10 x B</text>
+  <path d="M1103 240 V315" class="a"/>
 
-  <rect x="475" y="300" width="150" height="112" class="cache"/>
-  <text x="512" y="331" class="label">Cache[1]</text>
-  <text x="503" y="359" class="small">вход ReLU</text>
-  <text x="512" y="383" class="mono">128 x B</text>
+  <rect x="230" y="335" width="145" height="100" class="cache"/>
+  <text x="303" y="368" text-anchor="middle" class="h">cache[0]</text>
+  <text x="303" y="394" text-anchor="middle" class="t">input X</text>
+  <text x="303" y="417" text-anchor="middle" class="m">784 x B</text>
 
-  <rect x="1088" y="292" width="52" height="92" class="cache"/>
-  <text x="1101" y="324" class="label">...</text>
-  <text x="1100" y="352" class="small">кэши</text>
+  <rect x="430" y="335" width="145" height="100" class="cache"/>
+  <text x="503" y="368" text-anchor="middle" class="h">cache[1]</text>
+  <text x="503" y="394" text-anchor="middle" class="t">input ReLU</text>
+  <text x="503" y="417" text-anchor="middle" class="m">128 x B</text>
 
-  <path d="M 327 217 L 327 288" class="cache-arrow"/>
-  <path d="M 550 217 L 550 288" class="cache-arrow"/>
-  <path d="M 995 217 L 1114 288" class="cache-arrow"/>
+  <rect x="630" y="335" width="145" height="100" class="cache"/>
+  <text x="703" y="368" text-anchor="middle" class="h">cache[2]</text>
+  <text x="703" y="394" text-anchor="middle" class="t">input X</text>
+  <text x="703" y="417" text-anchor="middle" class="m">128 x B</text>
 
-  <rect x="40" y="432" width="1090" height="48" class="dim"/>
-  <text x="58" y="462" class="small">Контракт forward: каждый слой возвращает пару (выходная матрица, локальный cache). NeuralNetwork собирает cache в std::vector&lt;std::any&gt; в порядке слоев.</text>
+  <rect x="830" y="335" width="145" height="100" class="cache"/>
+  <text x="903" y="368" text-anchor="middle" class="h">cache[3]</text>
+  <text x="903" y="394" text-anchor="middle" class="t">input ReLU</text>
+  <text x="903" y="417" text-anchor="middle" class="m">64 x B</text>
+
+  <path d="M303 240 V335" class="c"/>
+  <path d="M503 240 V335" class="c"/>
+  <path d="M703 240 V335" class="c"/>
+  <path d="M903 240 V335" class="c"/>
+
+  <rect x="40" y="510" width="1135" height="52" class="note"/>
+  <text x="60" y="542" class="t">
+    forward возвращает пару: выходная матрица и std::vector&lt;std::any&gt; с локальными кэшами слоев.
+  </text>
 </svg>

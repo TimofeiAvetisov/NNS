@@ -1,66 +1,75 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="500" viewBox="0 0 1180 500">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560">
   <defs>
     <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
-      <path d="M 0 0 L 12 6 L 0 12 z" fill="#2563eb"/>
+      <path d="M0,0 L12,6 L0,12 Z" fill="#2563eb"/>
     </marker>
     <style>
-      .title { font: 700 24px Arial, sans-serif; fill: #111827; }
-      .label { font: 700 17px Arial, sans-serif; fill: #111827; }
-      .small { font: 14px Arial, sans-serif; fill: #374151; }
-      .mono { font: 14px Consolas, monospace; fill: #111827; }
-      .box { fill: #f9fafb; stroke: #111827; stroke-width: 2; rx: 8; }
-      .prep { fill: #ecfdf5; stroke: #047857; stroke-width: 2; rx: 8; }
-      .model { fill: #eef2ff; stroke: #3730a3; stroke-width: 2; rx: 8; }
-      .metric { fill: #fff7ed; stroke: #c2410c; stroke-width: 2; rx: 8; }
-      .arrow { stroke: #2563eb; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .title{font:700 26px Arial,sans-serif;fill:#111827}
+      .h{font:700 17px Arial,sans-serif;fill:#111827}
+      .t{font:14px Arial,sans-serif;fill:#374151}
+      .m{font:14px Consolas,monospace;fill:#111827}
+      .box{fill:#f9fafb;stroke:#111827;stroke-width:2;rx:10}
+      .prep{fill:#ecfdf5;stroke:#047857;stroke-width:2;rx:10}
+      .model{fill:#eef2ff;stroke:#3730a3;stroke-width:2;rx:10}
+      .metric{fill:#fff7ed;stroke:#c2410c;stroke-width:2;rx:10}
+      .a{stroke:#2563eb;stroke-width:2.8;fill:none;marker-end:url(#arrow)}
     </style>
   </defs>
 
-  <rect x="0" y="0" width="1180" height="500" fill="#ffffff"/>
-  <text x="40" y="48" class="title">Эксперимент MNIST: поток данных и вычисление метрик</text>
+  <rect width="1200" height="560" fill="#ffffff"/>
+  <text x="50" y="52" class="title">Эксперимент MNIST</text>
 
-  <rect x="40" y="112" width="180" height="95" class="box"/>
-  <text x="82" y="145" class="label">CSV-файлы</text>
-  <text x="70" y="173" class="mono">mnist_train</text>
-  <text x="75" y="195" class="mono">mnist_test</text>
+  <rect x="40" y="120" width="160" height="98" class="box"/>
+  <text x="120" y="155" text-anchor="middle" class="h">CSV</text>
+  <text x="120" y="182" text-anchor="middle" class="m">train/test</text>
+  <text x="120" y="205" text-anchor="middle" class="t">label + 784 px</text>
 
-  <path d="M 220 160 L 278 160" class="arrow"/>
-  <rect x="290" y="112" width="190" height="95" class="prep"/>
-  <text x="335" y="145" class="label">load_csv</text>
-  <text x="320" y="173" class="small">target column = 0</text>
-  <text x="319" y="195" class="mono">X: 784 x N</text>
+  <rect x="260" y="120" width="170" height="98" class="prep"/>
+  <text x="345" y="155" text-anchor="middle" class="h">load_csv</text>
+  <text x="345" y="182" text-anchor="middle" class="m">target={0}</text>
+  <text x="345" y="205" text-anchor="middle" class="m">X: 784 x N</text>
 
-  <path d="M 480 160 L 538 160" class="arrow"/>
-  <rect x="550" y="112" width="190" height="95" class="prep"/>
-  <text x="590" y="145" class="label">Preprocess</text>
-  <text x="578" y="173" class="mono">x := x / 255</text>
-  <text x="581" y="195" class="mono">one-hot(10)</text>
+  <rect x="490" y="120" width="170" height="98" class="prep"/>
+  <text x="575" y="155" text-anchor="middle" class="h">Preprocess</text>
+  <text x="575" y="182" text-anchor="middle" class="m">x / 255</text>
+  <text x="575" y="205" text-anchor="middle" class="m">one-hot(10)</text>
 
-  <path d="M 740 160 L 798 160" class="arrow"/>
-  <rect x="810" y="112" width="160" height="95" class="prep"/>
-  <text x="847" y="145" class="label">DataLoader</text>
-  <text x="841" y="173" class="mono">B = 100</text>
-  <text x="835" y="195" class="small">shuffle train</text>
+  <rect x="720" y="120" width="170" height="98" class="prep"/>
+  <text x="805" y="155" text-anchor="middle" class="h">DataLoader</text>
+  <text x="805" y="182" text-anchor="middle" class="m">B = 100</text>
+  <text x="805" y="205" text-anchor="middle" class="t">shuffle train</text>
 
-  <path d="M 890 207 C 890 250, 805 258, 750 258 L 705 258" class="arrow"/>
-  <rect x="430" y="245" width="275" height="120" class="model"/>
-  <text x="485" y="281" class="label">NeuralNetwork</text>
-  <text x="470" y="309" class="mono">784 -> 128 -> 64 -> 10</text>
-  <text x="470" y="334" class="mono">ReLU, Adam, CrossEntropy</text>
+  <rect x="950" y="120" width="190" height="98" class="model"/>
+  <text x="1045" y="155" text-anchor="middle" class="h">Trainer</text>
+  <text x="1045" y="182" text-anchor="middle" class="m">10 epochs</text>
+  <text x="1045" y="205" text-anchor="middle" class="m">seed = 42</text>
 
-  <path d="M 705 305 L 778 305" class="arrow"/>
-  <rect x="790" y="245" width="160" height="120" class="metric"/>
-  <text x="840" y="281" class="label">Logits</text>
-  <text x="826" y="309" class="mono">10 x B</text>
-  <text x="820" y="334" class="small">argmax class</text>
+  <path d="M200 169 H260" class="a"/>
+  <path d="M430 169 H490" class="a"/>
+  <path d="M660 169 H720" class="a"/>
+  <path d="M890 169 H950" class="a"/>
 
-  <path d="M 950 305 L 1008 305" class="arrow"/>
-  <rect x="1020" y="245" width="130" height="120" class="metric"/>
-  <text x="1047" y="281" class="label">Metrics</text>
-  <text x="1038" y="309" class="small">accuracy</text>
-  <text x="1038" y="331" class="small">precision</text>
-  <text x="1038" y="353" class="small">recall, F1</text>
+  <rect x="160" y="335" width="260" height="110" class="model"/>
+  <text x="290" y="372" text-anchor="middle" class="h">NeuralNetwork</text>
+  <text x="290" y="400" text-anchor="middle" class="m">784 -> 128 -> 64 -> 10</text>
+  <text x="290" y="425" text-anchor="middle" class="m">ReLU, logits</text>
 
-  <rect x="40" y="405" width="1110" height="50" class="box"/>
-  <text x="58" y="436" class="small">Фиксированные параметры запуска: seed = 42, batch size = 100, epochs = 10, optimizer = Adam(ConstantLR(0.001)), loss = CrossEntropyLoss.</text>
+  <rect x="500" y="335" width="220" height="110" class="metric"/>
+  <text x="610" y="372" text-anchor="middle" class="h">Optimization</text>
+  <text x="610" y="400" text-anchor="middle" class="m">Adam, lr = 0.001</text>
+  <text x="610" y="425" text-anchor="middle" class="m">CrossEntropyLoss</text>
+
+  <rect x="800" y="335" width="240" height="110" class="metric"/>
+  <text x="920" y="372" text-anchor="middle" class="h">Evaluation</text>
+  <text x="920" y="400" text-anchor="middle" class="m">accuracy = 0.9751</text>
+  <text x="920" y="425" text-anchor="middle" class="m">macro F1 = 0.9749</text>
+
+  <path d="M1045 218 V275 H290 V335" class="a"/>
+  <path d="M420 390 H500" class="a"/>
+  <path d="M720 390 H800" class="a"/>
+
+  <rect x="40" y="492" width="1100" height="40" class="box"/>
+  <text x="60" y="518" class="t">
+    Метрики считаются на тестовой выборке: argmax(logits), confusion matrix, precision, recall, F1.
+  </text>
 </svg>
