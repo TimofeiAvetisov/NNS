@@ -15,13 +15,13 @@ TEST_CASE("ConstantLR and TimeDecayLR expose iteration state", "[lr]") {
     constant.iter_step();
     REQUIRE(constant.get_iter() == 2);
 
-    nns::TimeDecayLR decay(nns::LR{1.0});
+    nns::TimeDecayLR decay(nns::LR{1.0}, nns::S0{1.0}, nns::P{0.5});
     REQUIRE(decay.get_lr() == Approx(1.0 / std::sqrt(2.0)));
     decay.iter_step();
     REQUIRE(decay.get_iter() == 2);
 
     REQUIRE_THROWS_AS(nns::ConstantLR(nns::LR{0.0}), std::invalid_argument);
-    REQUIRE_THROWS_AS(nns::TimeDecayLR(nns::LR{0.0}), std::invalid_argument);
+    REQUIRE_THROWS_AS(nns::TimeDecayLR(nns::LR{0.0}, nns::S0{1.0}, nns::P{0.5}), std::invalid_argument);
 }
 
 TEST_CASE("AnyLearningRateScheduler dispatches custom scheduler", "[lr][proxy]") {
